@@ -1,4 +1,4 @@
-# 我滴妈存档迁移工具 - 实施计划
+# 我在地府打麻将存档迁移工具 - 实施计划
 
 ## 一、Summary（摘要）
 
@@ -13,7 +13,7 @@
 | 前端包管理 | pnpm |
 | ADB 策略 | 内嵌 adb.exe + 2 个 DLL（运行时解压到 `%LOCALAPPDATA%`） |
 | 槽位迁移策略 | UI 列出 DB 所有行，用户勾选要迁移的行 |
-| 备份文件名格式 | `Slot{X}.json.{YYYYMMDD_HHMMSS}.bak`（注意：用户原文 `Slog` 视为 `Slot` 笔误） |
+| 备份文件名格式 | `Slot{X}.json.{YYYYMMDD_HHMMSS}.bak` |
 | 时间戳格式 | `YYYYMMDD_HHMMSS`（Windows 安全，无冒号） |
 
 ## 二、Current State Analysis（现状分析）
@@ -256,12 +256,11 @@ golang.org/x/sys
 ## 四、Assumptions & Decisions（假设与决策）
 
 ### 关键假设
-1. **`Slog` 是 `Slot` 的笔误**：用户原文 `Slog[012].json.[时间戳].bak`，按照上下文（PC 端文件名为 `Slot[012].json`）判断为笔误，统一使用 `Slot`。若理解有误请在评审时指出。
-2. **安卓 `adb pull` 可访问 `Android/data/{pkg}/files/`**：基于 ADB 在 Android 11+ 仍有提升权限的常规认知。若实测发现部分 ROM 仍限制，需文档化「手动拷贝」退路。
-3. **`jsonString` 直接写入 `Slot{X}.json`**：用户明确说明「`jsonString` 字段的内容对应着 Windows 下的 `Slot[012].json`」，不需要任何格式转换。
-4. **同一 slotIndex 多行 userAccount**：UI 列出全部，用户勾选；若勾选同一 slotIndex 多行，后者覆盖前者（前端默认禁用同 slotIndex 多选，提示用户）。
-5. **Steam userdata 数字子目录即 steamID**：符合 Steam 实际行为。
-6. **不需要 UAC 提权**：Steam userdata 目录通常用户可写；如遇权限问题，文档化让用户检查 Steam 是否运行（占用文件）。
+1. **安卓 `adb pull` 可访问 `Android/data/{pkg}/files/`**：基于 ADB 在 Android 11+ 仍有提升权限的常规认知。若实测发现部分 ROM 仍限制，需文档化「手动拷贝」退路。
+2. **`jsonString` 直接写入 `Slot{X}.json`**：用户明确说明「`jsonString` 字段的内容对应着 Windows 下的 `Slot[012].json`」，不需要任何格式转换。
+3. **同一 slotIndex 多行 userAccount**：UI 列出全部，用户勾选；若勾选同一 slotIndex 多行，后者覆盖前者（前端默认禁用同 slotIndex 多选，提示用户）。
+4. **Steam userdata 数字子目录即 steamID**：符合 Steam 实际行为。
+5. **不需要 UAC 提权**：Steam userdata 目录通常用户可写；如遇权限问题，文档化让用户检查 Steam 是否运行（占用文件）。
 
 ### 决策依据
 - **纯 Go SQLite**：避免 CGO 编译复杂度，Wails 默认构建链不需要 mingw。
