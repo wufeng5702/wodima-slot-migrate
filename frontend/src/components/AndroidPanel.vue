@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import QRCode from 'qrcode'
 
 const props = defineProps<{
@@ -23,6 +23,11 @@ const showDebugInfo = ref(false)
 
 // Wi-Fi feature flag - disabled until fully implemented
 const WIFI_ENABLED = true
+
+// Filter out localhost from URL list for LAN-only display
+const lanUrls = computed(() =>
+  props.wifiAllUrls.filter(url => !url.includes('localhost'))
+)
 
 const emit = defineEmits<{
   (e: 'auto'): void
@@ -107,58 +112,34 @@ async function copyCmd(cmd?: string) {
 
         <p class="hint">请先将手机连入同一 Wi-Fi，在手机文件管理器中把 game.db 复制到「Download」文件夹，然后在打开的网页上选择文件并上传。</p>
 
-        <!-- All available URLs for troubleshooting -->
-        <div class="all-urls" v-if="props.wifiAllUrls.length > 1">
+        <!-- All available URLs (excluding localhost) -->
+        <div class="all-urls" v-if="lanUrls.length > 1">
           <p class="section-title">🔗 所有可用地址（逐个尝试）：</p>
           <ul class="url-list">
-            <li v-for="(url, idx) in props.wifiAllUrls" :key="idx" :class="{ primary: url === props.wifiUrl }">
+            <li v-for="(url, idx) in lanUrls" :key="idx" :class="{ primary: url === props.wifiUrl }">
               <code class="url">{{ url }}</code>
               <span v-if="url === props.wifiUrl" class="badge">推荐</span>
-              <span v-else-if="url === props.wifiLocalUrl" class="badge local">本机</span>
             </li>
           </ul>
-        </div>
-
-        <div class="local-test" v-if="props.wifiLocalUrl">
-          <p>💻 本机测试地址：</p>
-          <code class="url">{{ props.wifiLocalUrl }}</code>
-          <p class="hint">请先在本机浏览器测试此地址是否可访问（应显示上传页面）。</p>
-        </div>
-
-        <div class="diagnose-section" v-if="props.wifiAllUrls.length > 0">
-          <p class="section-title">🔧 诊断步骤：</p>
-          <ol class="diagnose-steps">
-            <li>在<strong>本机浏览器</strong>打开 <code>{{ props.wifiLocalUrl }}ping</code>，应显示「pong」</li>
-            <li>在<strong>手机浏览器</strong>打开 <code>{{ props.wifiUrl }}ping</code>，应显示「pong」</li>
-            <li>如果第二步失败，尝试上方列表中的其他 IP 地址</li>
-            <li>如果所有地址都失败，请检查手机是否在同一 Wi-Fi 下</li>
-          </ol>
         </div>
 
         <div class="firewall-section" v-if="props.wifiFirewallCmd">
           <p class="section-title">🛡️ 防火墙配置（如手机无法访问）：</p>
           <p class="hint">以<strong>管理员身份</strong>打开 PowerShell，依次尝试以下方法：</p>
           
-          <p class="sub-title">方法 1：允许入站连接（关键步骤！）</p>
-          <p class="hint">Windows 防火墙默认阻止所有入站连接，需要先允许：</p>
-          <div class="cmd-container">
-            <code class="cmd">netsh advfirewall set allprofiles inbound allow</code>
-            <button class="btn-copy" @click="copyCmd('netsh advfirewall set allprofiles inbound allow')">复制</button>
-          </div>
-          
-          <p class="sub-title">方法 2：添加端口规则</p>
+          <p class="sub-title">方法 1：添加端口规则</p>
           <div class="cmd-container">
             <code class="cmd">{{ props.wifiFirewallCmd }}</code>
             <button class="btn-copy" @click="copyCmd(props.wifiFirewallCmd)">复制</button>
           </div>
           
-          <p class="sub-title">方法 3：使用 PowerShell 命令</p>
+          <p class="sub-title">方法 2：使用 PowerShell 命令</p>
           <div class="cmd-container">
             <code class="cmd">{{ props.wifiFirewallCmdPs }}</code>
             <button class="btn-copy" @click="copyCmd(props.wifiFirewallCmdPs)">复制</button>
           </div>
           
-          <p class="sub-title">方法 4：临时关闭防火墙测试</p>
+          <p class="sub-title">方法 3：临时关闭防火墙测试</p>
           <div class="cmd-container">
             <code class="cmd">Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False</code>
             <button class="btn-copy" @click="copyCmd('Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False')">复制</button>
@@ -198,20 +179,14 @@ async function copyCmd(cmd?: string) {
   border-radius: 8px;
   border: 1px solid var(--color-border);
 }
-.wifi-info, .local-test {
+.wifi-info {
   text-align: center;
 }
-.wifi-info .url, .local-test .url {
+.wifi-info .url {
   display: block;
   margin: 8px 0;
   font-size: 13px;
   word-break: break-all;
-}
-.local-test {
-  margin-top: 12px;
-  padding: 8px;
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: 6px;
 }
 .firewall-hint {
   margin-top: 12px;
@@ -328,36 +303,6 @@ async function copyCmd(cmd?: string) {
   background: var(--color-primary);
   color: white;
   white-space: nowrap;
-}
-.url-list .badge.local {
-  background: var(--color-text-muted);
-}
-.diagnose-section {
-  margin-top: 16px;
-  padding: 12px;
-  background: rgba(255, 193, 7, 0.1);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 193, 7, 0.3);
-}
-.diagnose-section .section-title {
-  font-weight: 600;
-  margin: 0 0 8px;
-  font-size: 13px;
-}
-.diagnose-steps {
-  margin: 0;
-  padding-left: 20px;
-  font-size: 12px;
-  line-height: 1.6;
-}
-.diagnose-steps li {
-  margin-bottom: 4px;
-}
-.diagnose-steps code {
-  background: rgba(0, 0, 0, 0.1);
-  padding: 1px 5px;
-  border-radius: 3px;
-  font-family: 'Consolas', 'Monaco', monospace;
 }
 .firewall-section {
   margin-top: 16px;
