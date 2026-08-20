@@ -24,6 +24,7 @@ export namespace android {
 	}
 	export class WifiResult {
 	    url: string;
+	    localUrl: string;
 	    token: string;
 	
 	    static createFrom(source: any = {}) {
@@ -33,6 +34,7 @@ export namespace android {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.url = source["url"];
+	        this.localUrl = source["localUrl"];
 	        this.token = source["token"];
 	    }
 	}

@@ -8,6 +8,7 @@ const props = defineProps<{
   status: string
   error: string
   wifiUrl: string
+  wifiLocalUrl: string
   wifiActive: boolean
   wifiWaiting: boolean
   wifiError: string
@@ -80,7 +81,15 @@ watch(() => props.wifiUrl, async (url: string) => {
           <code class="url">{{ props.wifiUrl }}</code>
           <p class="hint">请先将手机连入同一 Wi-Fi，在手机文件管理器中把 game.db 复制到「Download」文件夹，然后在打开的网页上选择文件并上传。</p>
         </div>
+        <div class="local-test" v-if="props.wifiLocalUrl">
+          <p>💻 本机测试地址：</p>
+          <code class="url">{{ props.wifiLocalUrl }}</code>
+          <p class="hint">如果手机无法访问上方地址，请先在本机浏览器测试此地址是否可访问。</p>
+        </div>
         <div class="qr-container" v-if="qrSvg" v-html="qrSvg"></div>
+        <div class="firewall-hint">
+          <p class="hint">⚠️ <strong>提示：</strong>如果手机无法打开网页，请检查 Windows 防火墙是否允许此端口的入站连接。</p>
+        </div>
         <button class="btn btn-stop" :disabled="props.busy" @click="emit('wifi')">停止 Wi-Fi 传输</button>
         <p v-if="props.wifiWaiting" class="hint">等待手机上传文件中…</p>
       </div>
@@ -100,14 +109,31 @@ watch(() => props.wifiUrl, async (url: string) => {
   border-radius: 8px;
   border: 1px solid var(--color-border);
 }
-.wifi-info {
+.wifi-info, .local-test {
   text-align: center;
 }
-.wifi-info .url {
+.wifi-info .url, .local-test .url {
   display: block;
   margin: 8px 0;
   font-size: 13px;
   word-break: break-all;
+}
+.local-test {
+  margin-top: 12px;
+  padding: 8px;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 6px;
+}
+.firewall-hint {
+  margin-top: 12px;
+  text-align: center;
+}
+.firewall-hint .hint {
+  background: #fff3cd;
+  color: #856404;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
 }
 .qr-container {
   display: flex;

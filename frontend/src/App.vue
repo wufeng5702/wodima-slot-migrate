@@ -21,6 +21,7 @@ const androidStatus = ref('')
 
 // Wi-Fi transfer state
 const wifiUrl = ref('')
+const wifiLocalUrl = ref('')
 const wifiActive = ref(false)
 const wifiWaiting = ref(false)
 const wifiError = ref('')
@@ -157,6 +158,7 @@ async function toggleWifi() {
     }
     wifiActive.value = false
     wifiUrl.value = ''
+    wifiLocalUrl.value = ''
     wifiWaiting.value = false
     wifiError.value = ''
   } else {
@@ -169,6 +171,7 @@ async function toggleWifi() {
       const result = await StartWifiServer()
       console.log('StartWifiServer result:', result)
       wifiUrl.value = result.url
+      wifiLocalUrl.value = result.localUrl
       wifiActive.value = true
       wifiWaiting.value = true
       wifiStatus.value = '等待手机上传存档文件…'
@@ -198,6 +201,7 @@ function pollWifiUpload(token: string) {
         wifiWaiting.value = false
         wifiActive.value = false
         wifiUrl.value = ''
+        wifiLocalUrl.value = ''
         wifiStatus.value = ''
         dbPath.value = path
         androidStatus.value = 'Wi-Fi 上传成功，已加载存档文件。'
@@ -242,6 +246,7 @@ function pollWifiUpload(token: string) {
         :status="androidStatus"
         :error="androidError"
         :wifi-url="wifiUrl"
+        :wifi-local-url="wifiLocalUrl"
         :wifi-active="wifiActive"
         :wifi-waiting="wifiWaiting"
         :wifi-error="wifiError"

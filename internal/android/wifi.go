@@ -61,6 +61,7 @@ func StartWifiServer(dstPath string) (*WifiResult, error) {
 	}()
 
 	url := fmt.Sprintf("http://%s:%d/", ip, port)
+	localURL := fmt.Sprintf("http://localhost:%d/", port)
 
 	// Store server reference
 	mu.Lock()
@@ -68,8 +69,9 @@ func StartWifiServer(dstPath string) (*WifiResult, error) {
 	mu.Unlock()
 
 	return &WifiResult{
-		URL:   url,
-		Token: token,
+		URL:      url,
+		LocalURL: localURL,
+		Token:    token,
 	}, nil
 }
 
@@ -110,8 +112,9 @@ var (
 
 // WifiResult holds the connection info for the client.
 type WifiResult struct {
-	URL   string `json:"url"`
-	Token string `json:"token"`
+	URL      string `json:"url"`      // LAN IP URL for phone access
+	LocalURL string `json:"localUrl"` // localhost URL for local testing
+	Token    string `json:"token"`
 }
 
 func (s *WifiServer) handleIndex(w http.ResponseWriter, r *http.Request) {
