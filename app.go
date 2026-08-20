@@ -112,7 +112,13 @@ func (a *App) StartWifiServer() (*android.WifiResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	return android.StartWifiServer(dst)
+	result, err := android.StartWifiServer(dst)
+	if err != nil {
+		runtime.LogDebug(a.ctx, "Wi-Fi server start failed: "+err.Error())
+		return nil, err
+	}
+	runtime.LogDebug(a.ctx, "Wi-Fi server started: "+result.URL)
+	return result, nil
 }
 
 // StopWifiServer stops the currently running Wi-Fi server.

@@ -52,6 +52,7 @@ func StartWifiServer(dstPath string) (*WifiResult, error) {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.handleIndex)
+	mux.HandleFunc("/ping", s.handlePing)
 	mux.HandleFunc("/upload", s.handleUpload)
 	mux.HandleFunc("/status", s.handleStatus)
 
@@ -172,26 +173,28 @@ func (s *WifiServer) handleIndex(w http.ResponseWriter, r *http.Request) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline' 'self'; connect-src 'self';">
   <title>上传 game.db</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; }
-    h1 { color: #333; }
-    .upload-area { border: 2px dashed #ccc; border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.3s; }
-    .upload-area:hover, .upload-area.dragover { border-color: #667eea; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; background: #f8f9fa; }
+    h1 { color: #333; text-align: center; }
+    .upload-area { border: 2px dashed #667eea; border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; background: white; }
+    .upload-area:active { transform: scale(0.98); }
     .upload-area p { color: #666; margin: 10px 0; }
     #file-input { display: none; }
-    .hint { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-top: 16px; font-size: 14px; color: #555; }
-    .hint code { background: #ddd; padding: 2px 6px; border-radius: 4px; }
+    .hint { background: #fff3cd; padding: 16px; border-radius: 8px; margin-top: 16px; font-size: 14px; color: #856404; }
+    .hint code { background: #e6e6e6; padding: 2px 6px; border-radius: 4px; }
     .status { margin-top: 16px; padding: 12px; border-radius: 8px; text-align: center; display: none; }
     .status.success { background: #d4edda; color: #155724; display: block; }
     .status.error { background: #f8d7da; color: #721c24; display: block; }
-    .progress { width: 100%; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; margin-top: 16px; display: none; }
+    .progress { width: 100%; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden; margin-top: 16px; display: none; }
     .progress-bar { height: 100%; background: #667eea; width: 0%; transition: width 0.3s; }
   </style>
 </head>
 <body>
   <h1>📤 上传游戏存档</h1>
-  <p>请将 <code>game.db</code> 文件上传到电脑</p>
+  <p style="text-align:center;">请将 <b>game.db</b> 文件上传到电脑</p>
 
   <div class="hint">
     <strong>📱 操作指引：</strong><br>
@@ -203,7 +206,7 @@ func (s *WifiServer) handleIndex(w http.ResponseWriter, r *http.Request) {
 
   <div class="upload-area" id="drop-zone">
     <p>📁 点击选择 game.db 文件</p>
-    <p style="font-size: 14px; color: #999;">或将文件拖到此处</p>
+    <p style="font-size: 14px; color: #999;">或长按粘贴文件</p>
   </div>
   <input type="file" id="file-input" accept=".db,.sqlite">
 
@@ -226,31 +229,32 @@ func (s *WifiServer) handleIndex(w http.ResponseWriter, r *http.Request) {
       if (e.target.files[0]) uploadFile(e.target.files[0]);
     });
 
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.add('dragover');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-      dropZone.classList.remove('dragover');
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
-      if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
+    // Paste support for mobile
+    document.addEventListener('paste', (e) => {
+      const items = e.clipboardData.items;
+      for (let item of items) {
+        if (item.kind === 'file') {
+          uploadFile(item.getAsFile());
+          break;
+        }
+      }
     });
 
     function uploadFile(file) {
+      if (!file) return;
+      console.log('Uploading file:', file.name, file.size);
+
       const formData = new FormData();
       formData.append('file', file);
 
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/upload');
+      xhr.open('POST', '/upload', true);
+      xhr.timeout = 120000; // 2 minutes
 
       progressContainer.style.display = 'block';
       status.className = 'status';
-      status.textContent = '';
+      status.textContent = '上传中…';
+      status.style.display = 'block';
 
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
@@ -262,18 +266,32 @@ func (s *WifiServer) handleIndex(w http.ResponseWriter, r *http.Request) {
       xhr.onload = () => {
         progressContainer.style.display = 'none';
         if (xhr.status === 200) {
-          status.className = 'status success';
-          status.textContent = '✅ 上传成功！请返回电脑查看。';
+          try {
+            const result = JSON.parse(xhr.responseText);
+            status.className = 'status success';
+            status.textContent = '✅ 上传成功！文件大小：' + result.size + ' 字节。请返回电脑查看。';
+          } catch {
+            status.className = 'status success';
+            status.textContent = '✅ 上传成功！请返回电脑查看。';
+          }
         } else {
           status.className = 'status error';
-          status.textContent = '❌ 上传失败：' + xhr.responseText;
+          status.textContent = '❌ 上传失败（HTTP ' + xhr.status + '）：' + xhr.responseText;
         }
+        console.log('Upload response:', xhr.status, xhr.responseText);
       };
 
       xhr.onerror = () => {
         progressContainer.style.display = 'none';
         status.className = 'status error';
-        status.textContent = '❌ 网络错误，请重试';
+        status.textContent = '❌ 网络错误。请确保手机和电脑在同一 Wi-Fi 下。';
+        console.error('Upload failed: network error');
+      };
+
+      xhr.ontimeout = () => {
+        progressContainer.style.display = 'none';
+        status.className = 'status error';
+        status.textContent = '⏰ 上传超时。文件可能过大，请重试。';
       };
 
       xhr.send(formData);
@@ -284,7 +302,7 @@ func (s *WifiServer) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	w.Header().Set("Connection", "close")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, html)
 }
@@ -354,6 +372,13 @@ func (s *WifiServer) handleStatus(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"path": result})
+}
+
+func (s *WifiServer) handlePing(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "pong")
 }
 
 // getAllIPs returns the best guess primary IP and all candidate IPs.

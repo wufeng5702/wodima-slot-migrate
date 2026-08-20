@@ -104,11 +104,22 @@ watch(() => props.wifiUrl, async (url: string) => {
         <div class="local-test" v-if="props.wifiLocalUrl">
           <p>💻 本机测试地址：</p>
           <code class="url">{{ props.wifiLocalUrl }}</code>
-          <p class="hint">如果手机无法访问上方地址，请先在本机浏览器测试此地址是否可访问。</p>
+          <p class="hint">请先在本机浏览器测试此地址是否可访问（应显示上传页面）。</p>
         </div>
+
+        <div class="diagnose-section" v-if="props.wifiAllUrls.length > 0">
+          <p class="section-title">🔧 诊断步骤：</p>
+          <ol class="diagnose-steps">
+            <li>在<strong>本机浏览器</strong>打开 <code>{{ props.wifiLocalUrl }}ping</code>，应显示「pong」</li>
+            <li>在<strong>手机浏览器</strong>打开 <code>{{ props.wifiUrl }}ping</code>，应显示「pong」</li>
+            <li>如果第二步失败，尝试上方列表中的其他 IP 地址</li>
+            <li>如果所有地址都失败，请检查手机是否在同一 Wi-Fi 下</li>
+          </ol>
+        </div>
+
         <div class="qr-container" v-if="qrSvg" v-html="qrSvg"></div>
         <div class="firewall-hint">
-          <p class="hint">⚠️ <strong>提示：</strong>如果手机无法打开网页，请尝试上方所有可用地址。</p>
+          <p class="hint">⚠️ <strong>提示：</strong>如果手机浏览器显示「连接被中止」或「无法访问」，通常是网络隔离问题。请确保手机和电脑<strong>在同一局域网</strong>，且电脑的防火墙未阻止入站连接。</p>
         </div>
         <div v-if="props.wifiDebugInfo" class="debug-section">
           <button class="btn-debug" @click="showDebugInfo = !showDebugInfo">
@@ -259,5 +270,32 @@ watch(() => props.wifiUrl, async (url: string) => {
 }
 .url-list .badge.local {
   background: var(--color-text-muted);
+}
+.diagnose-section {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+.diagnose-section .section-title {
+  font-weight: 600;
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.diagnose-steps {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.diagnose-steps li {
+  margin-bottom: 4px;
+}
+.diagnose-steps code {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: 'Consolas', 'Monaco', monospace;
 }
 </style>
