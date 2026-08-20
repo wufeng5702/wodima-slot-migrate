@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -20,7 +21,8 @@ type WifiServer struct {
 	token    string
 	result   string // path to uploaded file
 	done     chan struct{}
-	dstPath  string // where to save uploaded file
+	dstPath  string        // where to save uploaded file
+	ready    chan struct{} // signaled when server is ready
 }
 
 // StartWifiServer starts an HTTP server on the local network and returns
@@ -44,6 +46,7 @@ func StartWifiServer(dstPath string) (*WifiResult, error) {
 		listener: listener,
 		token:    token,
 		done:     make(chan struct{}),
+		ready:    make(chan struct{}),
 		dstPath:  dstPath,
 	}
 
@@ -52,14 +55,41 @@ func StartWifiServer(dstPath string) (*WifiResult, error) {
 	mux.HandleFunc("/upload", s.handleUpload)
 	mux.HandleFunc("/status", s.handleStatus)
 
-	s.server = &http.Server{Handler: mux}
+	s.server = &http.Server{
+		Handler:      mux,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
 
 	// Serve in background
+	serverErr := make(chan error, 1)
 	go func() {
+		close(s.ready) // Signal that server is accepting connections
 		if err := s.server.Serve(listener); err != http.ErrServerClosed {
-			_ = err
+			serverErr <- err
 		}
+		close(serverErr)
 	}()
+
+	// Wait for server to be ready (with timeout)
+	select {
+	case <-s.ready:
+		// Server is ready
+	case <-time.After(5 * time.Second):
+		listener.Close()
+		return nil, fmt.Errorf("server failed to start: timeout")
+	}
+
+	// Check if server failed immediately
+	select {
+	case err := <-serverErr:
+		if err != nil {
+			return nil, fmt.Errorf("server failed to start: %w", err)
+		}
+	default:
+		// Server is running
+	}
 
 	// Build URLs
 	url := fmt.Sprintf("http://%s:%d/", primaryIP, port)
@@ -135,6 +165,8 @@ type WifiResult struct {
 }
 
 func (s *WifiServer) handleIndex(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[Wi-Fi] GET / from %s", r.RemoteAddr)
+
 	html := `<!DOCTYPE html>
 <html>
 <head>
@@ -251,10 +283,15 @@ func (s *WifiServer) handleIndex(w http.ResponseWriter, r *http.Request) {
 </html>`
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Set("Connection", "close")
+	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, html)
 }
 
 func (s *WifiServer) handleUpload(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[Wi-Fi] %s /upload from %s, ContentLength=%d", r.Method, r.RemoteAddr, r.ContentLength)
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -263,12 +300,14 @@ func (s *WifiServer) handleUpload(w http.ResponseWriter, r *http.Request) {
 	// Parse multipart form (max 64MB)
 	r.Body = http.MaxBytesReader(w, r.Body, 64<<20)
 	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		log.Printf("[Wi-Fi] Error parsing form: %v", err)
 		http.Error(w, "Failed to parse form", http.StatusBadRequest)
 		return
 	}
 
 	file, _, err := r.FormFile("file")
 	if err != nil {
+		log.Printf("[Wi-Fi] Error getting file: %v", err)
 		http.Error(w, "No file uploaded", http.StatusBadRequest)
 		return
 	}
@@ -279,15 +318,20 @@ func (s *WifiServer) handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	dst, err := os.Create(dstPath)
 	if err != nil {
+		log.Printf("[Wi-Fi] Error creating file: %v", err)
 		http.Error(w, "Failed to create file", http.StatusInternalServerError)
 		return
 	}
 	defer dst.Close()
 
-	if _, err := io.Copy(dst, file); err != nil {
+	n, err := io.Copy(dst, file)
+	if err != nil {
+		log.Printf("[Wi-Fi] Error saving file: %v", err)
 		http.Error(w, "Failed to save file", http.StatusInternalServerError)
 		return
 	}
+
+	log.Printf("[Wi-Fi] File uploaded successfully: %s (%d bytes)", dstPath, n)
 
 	// Mark as done
 	s.mu.Lock()
@@ -296,7 +340,9 @@ func (s *WifiServer) handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	// Notify success
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	w.Header().Set("Connection", "close")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{"status": "ok", "size": n})
 }
 
 func (s *WifiServer) handleStatus(w http.ResponseWriter, r *http.Request) {
@@ -305,6 +351,8 @@ func (s *WifiServer) handleStatus(w http.ResponseWriter, r *http.Request) {
 	s.mu.Unlock()
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"path": result})
 }
 
