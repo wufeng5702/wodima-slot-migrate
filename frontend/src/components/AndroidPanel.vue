@@ -13,7 +13,10 @@ const props = defineProps<{
   wifiWaiting: boolean
   wifiError: string
   wifiStatus: string
+  wifiDebugInfo: string
 }>()
+
+const showDebugInfo = ref(false)
 
 const emit = defineEmits<{
   (e: 'auto'): void
@@ -90,6 +93,12 @@ watch(() => props.wifiUrl, async (url: string) => {
         <div class="firewall-hint">
           <p class="hint">⚠️ <strong>提示：</strong>如果手机无法打开网页，请检查 Windows 防火墙是否允许此端口的入站连接。</p>
         </div>
+        <div v-if="props.wifiDebugInfo" class="debug-section">
+          <button class="btn-debug" @click="showDebugInfo = !showDebugInfo">
+            {{ showDebugInfo ? '隐藏' : '显示' }}网络接口信息
+          </button>
+          <pre v-if="showDebugInfo" class="debug-info">{{ props.wifiDebugInfo }}</pre>
+        </div>
         <button class="btn btn-stop" :disabled="props.busy" @click="emit('wifi')">停止 Wi-Fi 传输</button>
         <p v-if="props.wifiWaiting" class="hint">等待手机上传文件中…</p>
       </div>
@@ -151,5 +160,35 @@ watch(() => props.wifiUrl, async (url: string) => {
 }
 .btn-stop:hover {
   opacity: 0.9;
+}
+.debug-section {
+  margin-top: 12px;
+  text-align: center;
+}
+.btn-debug {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn-debug:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+.debug-info {
+  text-align: left;
+  margin: 8px auto 0;
+  padding: 12px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  white-space: pre-wrap;
+  max-width: 500px;
+  overflow-x: auto;
 }
 </style>

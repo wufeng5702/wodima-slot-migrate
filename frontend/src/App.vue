@@ -26,6 +26,7 @@ const wifiActive = ref(false)
 const wifiWaiting = ref(false)
 const wifiError = ref('')
 const wifiStatus = ref('')
+const wifiDebugInfo = ref('')
 
 const canMigrate = computed(
   () => selectedRemote.value !== '' && dbPath.value !== '' && selectedIds.value.length > 0
@@ -164,6 +165,7 @@ async function clearWifiState() {
   wifiWaiting.value = false
   wifiError.value = ''
   wifiStatus.value = ''
+  wifiDebugInfo.value = ''
 }
 
 async function toggleWifi() {
@@ -181,6 +183,7 @@ async function toggleWifi() {
     wifiLocalUrl.value = ''
     wifiWaiting.value = false
     wifiError.value = ''
+    wifiDebugInfo.value = ''
   } else {
     // Start Wi-Fi server
     busy.value = true
@@ -192,6 +195,7 @@ async function toggleWifi() {
       console.log('StartWifiServer result:', result)
       wifiUrl.value = result.url
       wifiLocalUrl.value = result.localUrl
+      wifiDebugInfo.value = result.debugInfo
       wifiActive.value = true
       wifiWaiting.value = true
       wifiStatus.value = '等待手机上传存档文件…'
@@ -271,6 +275,7 @@ function pollWifiUpload(token: string) {
         :wifi-waiting="wifiWaiting"
         :wifi-error="wifiError"
         :wifi-status="wifiStatus"
+        :wifi-debug-info="wifiDebugInfo"
         @auto="autoFetch"
         @pick="pickAndroidDB"
         @wifi="toggleWifi"

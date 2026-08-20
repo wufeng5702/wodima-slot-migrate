@@ -26,6 +26,7 @@ export namespace android {
 	    url: string;
 	    localUrl: string;
 	    token: string;
+	    debugInfo: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new WifiResult(source);
@@ -36,6 +37,7 @@ export namespace android {
 	        this.url = source["url"];
 	        this.localUrl = source["localUrl"];
 	        this.token = source["token"];
+	        this.debugInfo = source["debugInfo"];
 	    }
 	}
 

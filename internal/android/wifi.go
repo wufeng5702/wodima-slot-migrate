@@ -63,15 +63,19 @@ func StartWifiServer(dstPath string) (*WifiResult, error) {
 	url := fmt.Sprintf("http://%s:%d/", ip, port)
 	localURL := fmt.Sprintf("http://localhost:%d/", port)
 
+	// Get debug info
+	debugInfo := fmt.Sprintf("Selected IP: %s\nNetwork interfaces:\n%s", ip, listNetworkInterfaces())
+
 	// Store server reference
 	mu.Lock()
 	activeServer = s
 	mu.Unlock()
 
 	return &WifiResult{
-		URL:      url,
-		LocalURL: localURL,
-		Token:    token,
+		URL:       url,
+		LocalURL:  localURL,
+		Token:     token,
+		DebugInfo: debugInfo,
 	}, nil
 }
 
@@ -112,9 +116,10 @@ var (
 
 // WifiResult holds the connection info for the client.
 type WifiResult struct {
-	URL      string `json:"url"`      // LAN IP URL for phone access
-	LocalURL string `json:"localUrl"` // localhost URL for local testing
-	Token    string `json:"token"`
+	URL       string `json:"url"`      // LAN IP URL for phone access
+	LocalURL  string `json:"localUrl"` // localhost URL for local testing
+	Token     string `json:"token"`
+	DebugInfo string `json:"debugInfo"` // Debug info for troubleshooting
 }
 
 func (s *WifiServer) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -291,19 +296,90 @@ func (s *WifiServer) handleStatus(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"path": result})
 }
 
-// localIP returns the first non-loopback IPv4 address of the host.
+// localIP returns the best non-loopback IPv4 address of the host.
+// It prefers active, non-point-to-point interfaces (excluding VPNs).
+// It also excludes CGNAT (100.64.0.0/10) and other non-routable addresses.
 // Falls back to 127.0.0.1 if no suitable address is found.
 func localIP() string {
-	addrs, err := net.InterfaceAddrs()
+	ifaces, err := net.Interfaces()
 	if err != nil {
 		return "127.0.0.1"
 	}
-	for _, addr := range addrs {
-		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ip4 := ipnet.IP.To4(); ip4 != nil {
-				return ip4.String()
+
+	var candidates []string
+	for _, iface := range ifaces {
+		// Skip down interfaces
+		if iface.Flags&net.FlagUp == 0 {
+			continue
+		}
+		// Skip loopback and point-to-point (typically VPNs)
+		if iface.Flags&net.FlagLoopback != 0 || iface.Flags&net.FlagPointToPoint != 0 {
+			continue
+		}
+
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			if ipnet, ok := addr.(*net.IPNet); ok {
+				ip := ipnet.IP
+				if ip4 := ip.To4(); ip4 != nil {
+					// Skip loopback, link-local, and CGNAT (100.64.0.0/10)
+					if ip4.IsLoopback() || ip4.IsLinkLocalUnicast() || isCGNAT(ip4) {
+						continue
+					}
+					candidates = append(candidates, ip4.String())
+				}
 			}
 		}
 	}
+
+	if len(candidates) > 0 {
+		return candidates[0]
+	}
 	return "127.0.0.1"
+}
+
+// isCGNAT checks if an IP is in the Carrier-Grade NAT range (100.64.0.0/10)
+func isCGNAT(ip net.IP) bool {
+	_, cgnatNet, _ := net.ParseCIDR("100.64.0.0/10")
+	return cgnatNet.Contains(ip)
+}
+
+// listNetworkInterfaces returns a summary of all active network interfaces
+// for debugging purposes.
+func listNetworkInterfaces() string {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return "failed to list interfaces: " + err.Error()
+	}
+
+	var result string
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 {
+			continue
+		}
+		ifaceDesc := iface.Name
+		if iface.Flags&net.FlagPointToPoint != 0 {
+			ifaceDesc += " (VPN/PPP)"
+		}
+		if iface.Flags&net.FlagLoopback != 0 {
+			ifaceDesc += " (loopback)"
+		}
+
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			if ipnet, ok := addr.(*net.IPNet); ok {
+				ip4 := ipnet.IP.To4()
+				if ip4 != nil {
+					result += fmt.Sprintf("  %s: %s\n", ifaceDesc, ip4.String())
+				}
+			}
+		}
+	}
+	return result
 }
