@@ -22,9 +22,9 @@ jobs:
           cache: false
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
-          version: v1.62
+          version: v2.13
           args: --timeout 10m
 
   frontend-build:
