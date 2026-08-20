@@ -127,7 +127,7 @@ async function doMigrate() {
 <template>
   <div class="app">
     <header class="app-header">
-      <h1>我滴妈 · 存档迁移</h1>
+      <h1>我在地府打麻将 · 存档迁移</h1>
       <p class="subtitle">Android → Steam (appid 3444020)</p>
     </header>
     <main class="app-main">
