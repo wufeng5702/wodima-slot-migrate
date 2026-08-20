@@ -1,2 +1,4 @@
-.vscode
+build/bin
+node_modules
+frontend/dist
 game.db
