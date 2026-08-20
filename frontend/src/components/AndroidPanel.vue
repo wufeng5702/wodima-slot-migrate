@@ -18,6 +18,9 @@ const props = defineProps<{
 
 const showDebugInfo = ref(false)
 
+// Wi-Fi feature flag - disabled until fully implemented
+const WIFI_ENABLED = false
+
 const emit = defineEmits<{
   (e: 'auto'): void
   (e: 'pick'): void
@@ -60,7 +63,7 @@ watch(() => props.wifiUrl, async (url: string) => {
       <div class="row">
         <button class="btn" :disabled="props.busy" @click="emit('auto')">自动从手机获取</button>
         <button class="btn" :disabled="props.busy" @click="emit('pick')">手动选择 game.db</button>
-        <button class="btn" :disabled="props.busy || props.wifiActive" @click="emit('wifi')">
+        <button v-if="WIFI_ENABLED" class="btn" :disabled="props.busy || props.wifiActive" @click="emit('wifi')">
           {{ props.wifiActive ? '停止 Wi-Fi 传输' : (props.busy ? '启动中…' : '通过 Wi-Fi 获取') }}
         </button>
       </div>
@@ -68,8 +71,8 @@ watch(() => props.wifiUrl, async (url: string) => {
       <!-- Status/Error messages -->
       <p v-if="props.status" class="hint">{{ props.status }}</p>
       <p v-if="props.error" class="error">{{ props.error }}</p>
-      <p v-if="props.wifiStatus" class="hint wifi-status">{{ props.wifiStatus }}</p>
-      <p v-if="props.wifiError" class="error">Wi-Fi 错误：{{ props.wifiError }}</p>
+      <p v-if="WIFI_ENABLED && props.wifiStatus" class="hint wifi-status">{{ props.wifiStatus }}</p>
+      <p v-if="WIFI_ENABLED && props.wifiError" class="error">Wi-Fi 错误：{{ props.wifiError }}</p>
 
       <!-- Selected local file path -->
       <div class="row" v-if="props.dbPath">
@@ -78,7 +81,7 @@ watch(() => props.wifiUrl, async (url: string) => {
       </div>
 
       <!-- Wi-Fi transfer panel -->
-      <div class="wifi-panel" v-if="props.wifiActive">
+      <div class="wifi-panel" v-if="WIFI_ENABLED && props.wifiActive">
         <div class="wifi-info" v-if="props.wifiUrl">
           <p>📱 在手机上扫描二维码，或在浏览器打开：</p>
           <code class="url">{{ props.wifiUrl }}</code>
