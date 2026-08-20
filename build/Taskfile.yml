@@ -62,10 +62,7 @@ tasks:
           OBFUSCATED:
             ref: .OBFUSCATED
     cmds:
-      - pnpm run {{.SCRIPT}}
-    vars:
-      SCRIPT: "{{.SCRIPT}}"
-
+      - pnpm run build
 
   #    cmds:
   #      - task: frontend:run
