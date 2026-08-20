@@ -38,7 +38,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: wails build -clean -nsis -webview2
+        run: wails build -clean -nsis -webview2 embed
 
       - name: Upload artifacts
         uses: softprops/action-gh-release@v2
