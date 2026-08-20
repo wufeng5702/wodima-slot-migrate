@@ -76,12 +76,13 @@ async function copyCmd(cmd?: string) {
 
       <!-- Action buttons -->
       <div class="row">
-        <button class="btn" :disabled="props.busy" @click="emit('auto')" title="需要使用数据线连接手机，并在手机上开启 USB 调试模式">自动从手机获取</button>
+        <button class="btn" :disabled="props.busy" @click="emit('auto')">自动从手机获取</button>
         <button class="btn" :disabled="props.busy" @click="emit('pick')">手动选择 game.db</button>
         <button v-if="WIFI_ENABLED" class="btn" :disabled="props.busy || props.wifiActive" @click="emit('wifi')">
           {{ props.wifiActive ? '停止 Wi-Fi 传输' : (props.busy ? '启动中…' : '通过 Wi-Fi 获取') }}
         </button>
       </div>
+      <p class="hint note">💡 「自动从手机获取」需要使用<strong>数据线</strong>连接手机，并在手机上开启 <strong>USB 调试模式</strong>。</p>
 
       <!-- Status/Error messages -->
       <p v-if="props.status" class="hint">{{ props.status }}</p>
@@ -213,6 +214,15 @@ async function copyCmd(cmd?: string) {
 .firewall-hint {
   margin-top: 12px;
   text-align: center;
+}
+.hint.note {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid var(--color-primary);
+  color: var(--color-text);
+  line-height: 1.5;
 }
 .firewall-hint .hint {
   background: #fff3cd;
