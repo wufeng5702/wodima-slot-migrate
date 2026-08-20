@@ -15,6 +15,7 @@ const props = defineProps<{
   wifiError: string
   wifiStatus: string
   wifiDebugInfo: string
+  wifiFirewallCmd: string
 }>()
 
 const showDebugInfo = ref(false)
@@ -46,6 +47,17 @@ watch(() => props.wifiUrl, async (url: string) => {
     qrSvg.value = ''
   }
 }, { immediate: true })
+
+async function copyCmd() {
+  if (props.wifiFirewallCmd) {
+    try {
+      await navigator.clipboard.writeText(props.wifiFirewallCmd)
+      alert('命令已复制到剪贴板！')
+    } catch {
+      alert('复制失败，请手动复制')
+    }
+  }
+}
 </script>
 
 <template>
@@ -117,9 +129,18 @@ watch(() => props.wifiUrl, async (url: string) => {
           </ol>
         </div>
 
+        <div class="firewall-section" v-if="props.wifiFirewallCmd">
+          <p class="section-title">🛡️ 防火墙配置（如手机无法访问）：</p>
+          <p class="hint">以<strong>管理员身份</strong>打开 PowerShell，复制并执行以下命令：</p>
+          <div class="cmd-container">
+            <code class="cmd">{{ props.wifiFirewallCmd }}</code>
+            <button class="btn-copy" @click="copyCmd">复制</button>
+          </div>
+        </div>
+
         <div class="qr-container" v-if="qrSvg" v-html="qrSvg"></div>
         <div class="firewall-hint">
-          <p class="hint">⚠️ <strong>提示：</strong>如果手机浏览器显示「连接被中止」或「无法访问」，通常是网络隔离问题。请确保手机和电脑<strong>在同一局域网</strong>，且电脑的防火墙未阻止入站连接。</p>
+          <p class="hint">💡 <strong>提示：</strong>如果手机浏览器显示「连接被中止」，多数情况下是 Windows 防火墙阻止了入站连接。添加上方防火墙规则后即可解决。</p>
         </div>
         <div v-if="props.wifiDebugInfo" class="debug-section">
           <button class="btn-debug" @click="showDebugInfo = !showDebugInfo">
@@ -297,5 +318,47 @@ watch(() => props.wifiUrl, async (url: string) => {
   padding: 1px 5px;
   border-radius: 3px;
   font-family: 'Consolas', 'Monaco', monospace;
+}
+.firewall-section {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(220, 53, 69, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(220, 53, 69, 0.3);
+}
+.firewall-section .section-title {
+  font-weight: 600;
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.cmd-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #1e1e1e;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.cmd-container .cmd {
+  flex: 1;
+  color: #d4d4d4;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.btn-copy {
+  padding: 4px 12px;
+  font-size: 12px;
+  background: #0078d4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-copy:hover {
+  background: #106ebe;
 }
 </style>

@@ -28,6 +28,8 @@ export namespace android {
 	    allUrls: string[];
 	    token: string;
 	    debugInfo: string;
+	    port: number;
+	    firewallCmd: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new WifiResult(source);
@@ -40,6 +42,8 @@ export namespace android {
 	        this.allUrls = source["allUrls"];
 	        this.token = source["token"];
 	        this.debugInfo = source["debugInfo"];
+	        this.port = source["port"];
+	        this.firewallCmd = source["firewallCmd"];
 	    }
 	}
 
