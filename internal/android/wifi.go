@@ -116,20 +116,15 @@ func StartWifiServer(dstPath string) (*WifiResult, error) {
 		"netsh advfirewall firewall add rule name=\"Wodima Wi-Fi Upload\" dir=in action=allow protocol=TCP localport=%d profile=any",
 		port,
 	)
-	firewallCmdPS := fmt.Sprintf(
-		"New-NetFirewallRule -DisplayName \"Wodima Wi-Fi Upload\" -Direction Inbound -Action Allow -Protocol TCP -LocalPort %d -Profile Any",
-		port,
-	)
 
 	return &WifiResult{
-		URL:           url,
-		LocalURL:      localURL,
-		AllURLs:       allURLs,
-		Token:         token,
-		DebugInfo:     debugInfo,
-		Port:          port,
-		FirewallCmd:   firewallCmd,
-		FirewallCmdPS: firewallCmdPS,
+		URL:         url,
+		LocalURL:    localURL,
+		AllURLs:     allURLs,
+		Token:       token,
+		DebugInfo:   debugInfo,
+		Port:        port,
+		FirewallCmd: firewallCmd,
 	}, nil
 }
 
@@ -170,14 +165,13 @@ var (
 
 // WifiResult holds the connection info for the client.
 type WifiResult struct {
-	URL           string   `json:"url"`      // Best guess URL for phone access
-	LocalURL      string   `json:"localUrl"` // localhost URL for local testing
-	AllURLs       []string `json:"allUrls"`  // All available IP-based URLs
-	Token         string   `json:"token"`
-	DebugInfo     string   `json:"debugInfo"`     // Debug info for troubleshooting
-	Port          int      `json:"port"`          // Listening port
-	FirewallCmd   string   `json:"firewallCmd"`   // netsh command to add firewall rule
-	FirewallCmdPS string   `json:"firewallCmdPs"` // PowerShell command to add firewall rule
+	URL         string   `json:"url"`      // Best guess URL for phone access
+	LocalURL    string   `json:"localUrl"` // localhost URL for local testing
+	AllURLs     []string `json:"allUrls"`  // All available IP-based URLs
+	Token       string   `json:"token"`
+	DebugInfo   string   `json:"debugInfo"`   // Debug info for troubleshooting
+	Port        int      `json:"port"`        // Listening port
+	FirewallCmd string   `json:"firewallCmd"` // netsh command to add firewall rule
 }
 
 func (s *WifiServer) handleIndex(w http.ResponseWriter, r *http.Request) {

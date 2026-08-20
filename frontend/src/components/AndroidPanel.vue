@@ -16,7 +16,6 @@ const props = defineProps<{
   wifiStatus: string
   wifiDebugInfo: string
   wifiFirewallCmd: string
-  wifiFirewallCmdPs: string
 }>()
 
 const showDebugInfo = ref(false)
@@ -139,27 +138,6 @@ async function copyCmd(cmd?: string) {
             <code class="cmd">{{ props.wifiFirewallCmd }}</code>
             <button class="btn-copy" @click="copyCmd(props.wifiFirewallCmd)">复制</button>
           </div>
-          
-          <p class="sub-title">方法 3：使用 PowerShell 命令</p>
-          <div class="cmd-container">
-            <code class="cmd">{{ props.wifiFirewallCmdPs }}</code>
-            <button class="btn-copy" @click="copyCmd(props.wifiFirewallCmdPs)">复制</button>
-          </div>
-          
-          <p class="sub-title">方法 4：临时关闭防火墙测试</p>
-          <div class="cmd-container">
-            <code class="cmd">Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False</code>
-            <button class="btn-copy" @click="copyCmd('Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False')">复制</button>
-          </div>
-          <p class="hint warning">⚠️ 临时关闭防火墙会移除所有网络保护，请在测试完成后立即重新开启：</p>
-          <div class="cmd-container">
-            <code class="cmd">Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True</code>
-            <button class="btn-copy" @click="copyCmd('Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True')">复制</button>
-          </div>
-        </div>
-
-        <div class="firewall-hint">
-          <p class="hint">💡 <strong>提示：</strong>如果方法 1 无效，请尝试方法 2-3。如果关闭防火墙后手机可以访问，说明问题出在防火墙配置上。</p>
         </div>
         <div v-if="props.wifiDebugInfo" class="debug-section">
           <button class="btn-debug" @click="showDebugInfo = !showDebugInfo">
@@ -195,10 +173,6 @@ async function copyCmd(cmd?: string) {
   font-size: 13px;
   word-break: break-all;
 }
-.firewall-hint {
-  margin-top: 12px;
-  text-align: center;
-}
 .hint.note {
   margin-top: 8px;
   padding: 8px 10px;
@@ -207,13 +181,6 @@ async function copyCmd(cmd?: string) {
   border-left: 3px solid var(--color-primary);
   color: var(--color-text);
   line-height: 1.5;
-}
-.firewall-hint .hint {
-  background: #fff3cd;
-  color: #856404;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 13px;
 }
 .qr-container {
   display: flex;
@@ -326,10 +293,6 @@ async function copyCmd(cmd?: string) {
 }
 .firewall-section .sub-title:first-of-type {
   margin-top: 8px;
-}
-.firewall-section .hint.warning {
-  color: #dc3545;
-  margin: 8px 0 4px;
 }
 .firewall-section .section-title {
   font-weight: 600;
