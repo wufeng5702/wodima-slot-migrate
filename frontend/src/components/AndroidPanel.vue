@@ -11,6 +11,7 @@ const props = defineProps<{
   wifiActive: boolean
   wifiWaiting: boolean
   wifiError: string
+  wifiStatus: string
 }>()
 
 const emit = defineEmits<{
@@ -55,12 +56,15 @@ watch(() => props.wifiUrl, async (url: string) => {
       <div class="row">
         <button class="btn" :disabled="props.busy" @click="emit('auto')">自动从手机获取</button>
         <button class="btn" :disabled="props.busy" @click="emit('pick')">手动选择 game.db</button>
-        <button class="btn" :disabled="props.busy || props.wifiActive" @click="emit('wifi')">通过 Wi-Fi 获取</button>
+        <button class="btn" :disabled="props.busy || props.wifiActive" @click="emit('wifi')">
+          {{ props.wifiActive ? '停止 Wi-Fi 传输' : (props.busy ? '启动中…' : '通过 Wi-Fi 获取') }}
+        </button>
       </div>
 
       <!-- Status/Error messages -->
       <p v-if="props.status" class="hint">{{ props.status }}</p>
       <p v-if="props.error" class="error">{{ props.error }}</p>
+      <p v-if="props.wifiStatus" class="hint wifi-status">{{ props.wifiStatus }}</p>
       <p v-if="props.wifiError" class="error">Wi-Fi 错误：{{ props.wifiError }}</p>
 
       <!-- Selected local file path -->
@@ -85,6 +89,10 @@ watch(() => props.wifiUrl, async (url: string) => {
 </template>
 
 <style scoped>
+.wifi-status {
+  color: #667eea;
+  font-weight: 500;
+}
 .wifi-panel {
   margin-top: 16px;
   padding: 16px;

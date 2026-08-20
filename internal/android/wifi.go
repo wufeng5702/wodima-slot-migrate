@@ -25,14 +25,11 @@ type WifiServer struct {
 // StartWifiServer starts an HTTP server on the local network and returns
 // the URL and token for the client to upload game.db from their phone.
 func StartWifiServer(dstPath string) (*WifiResult, error) {
-	// Get local IP
-	ip, err := localIP()
-	if err != nil {
-		return nil, fmt.Errorf("detect local IP: %w", err)
-	}
+	// Get local IP for display
+	ip := localIP()
 
-	// Find free port
-	listener, err := net.Listen("tcp", fmt.Sprintf("%s:0", ip))
+	// Bind to all interfaces for reliability
+	listener, err := net.Listen("tcp", "0.0.0.0:0")
 	if err != nil {
 		return nil, fmt.Errorf("bind port: %w", err)
 	}
@@ -292,17 +289,18 @@ func (s *WifiServer) handleStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 // localIP returns the first non-loopback IPv4 address of the host.
-func localIP() (string, error) {
+// Falls back to 127.0.0.1 if no suitable address is found.
+func localIP() string {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		return "", err
+		return "127.0.0.1"
 	}
 	for _, addr := range addrs {
 		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ip4 := ipnet.IP.To4(); ip4 != nil {
-				return ip4.String(), nil
+				return ip4.String()
 			}
 		}
 	}
-	return "127.0.0.1", nil
+	return "127.0.0.1"
 }

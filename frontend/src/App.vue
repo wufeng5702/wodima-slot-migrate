@@ -24,6 +24,7 @@ const wifiUrl = ref('')
 const wifiActive = ref(false)
 const wifiWaiting = ref(false)
 const wifiError = ref('')
+const wifiStatus = ref('')
 
 const canMigrate = computed(
   () => selectedRemote.value !== '' && dbPath.value !== '' && selectedIds.value.length > 0
@@ -129,10 +130,26 @@ async function doMigrate() {
   }
 }
 
+// Poll timer reference for cleanup
+let wifiPollTimer: ReturnType<typeof setInterval> | null = null
+let wifiPollTimeout: ReturnType<typeof setTimeout> | null = null
+
+function stopWifiPolling() {
+  if (wifiPollTimer) {
+    clearInterval(wifiPollTimer)
+    wifiPollTimer = null
+  }
+  if (wifiPollTimeout) {
+    clearTimeout(wifiPollTimeout)
+    wifiPollTimeout = null
+  }
+}
+
 async function toggleWifi() {
   console.log('toggleWifi called, wifiActive:', wifiActive.value)
   if (wifiActive.value) {
     // Stop Wi-Fi server
+    stopWifiPolling()
     try {
       await StopWifiServer()
     } catch (e: any) {
@@ -146,6 +163,7 @@ async function toggleWifi() {
     // Start Wi-Fi server
     busy.value = true
     wifiError.value = ''
+    wifiStatus.value = '正在启动 Wi-Fi 服务器…'
     try {
       console.log('Calling StartWifiServer...')
       const result = await StartWifiServer()
@@ -153,28 +171,34 @@ async function toggleWifi() {
       wifiUrl.value = result.url
       wifiActive.value = true
       wifiWaiting.value = true
+      wifiStatus.value = '等待手机上传存档文件…'
       // Poll for upload completion
       pollWifiUpload(result.token)
     } catch (e: any) {
       console.error('StartWifiServer failed:', e)
       wifiError.value = String(e?.message ?? e)
+      wifiStatus.value = ''
     } finally {
       busy.value = false
     }
   }
 }
 
-async function pollWifiUpload(token: string) {
+function pollWifiUpload(token: string) {
+  // Clear any existing polling
+  stopWifiPolling()
+
   // Poll every 2 seconds for file upload completion
-  const interval = setInterval(async () => {
+  wifiPollTimer = setInterval(async () => {
     try {
       const path = await CheckWifiUpload(token)
       if (path) {
         // File uploaded successfully
-        clearInterval(interval)
+        stopWifiPolling()
         wifiWaiting.value = false
         wifiActive.value = false
         wifiUrl.value = ''
+        wifiStatus.value = ''
         dbPath.value = path
         androidStatus.value = 'Wi-Fi 上传成功，已加载存档文件。'
         await readSlots(path)
@@ -183,6 +207,16 @@ async function pollWifiUpload(token: string) {
       // Still waiting, ignore errors
     }
   }, 2000)
+
+  // Timeout after 10 minutes
+  wifiPollTimeout = setTimeout(() => {
+    stopWifiPolling()
+    if (wifiActive.value && wifiWaiting.value) {
+      wifiWaiting.value = false
+      wifiStatus.value = '等待超时，请重新启动 Wi-Fi 传输。'
+      wifiError.value = '上传超时（10 分钟）'
+    }
+  }, 10 * 60 * 1000)
 }
 </script>
 
@@ -211,6 +245,7 @@ async function pollWifiUpload(token: string) {
         :wifi-active="wifiActive"
         :wifi-waiting="wifiWaiting"
         :wifi-error="wifiError"
+        :wifi-status="wifiStatus"
         @auto="autoFetch"
         @pick="pickAndroidDB"
         @wifi="toggleWifi"
