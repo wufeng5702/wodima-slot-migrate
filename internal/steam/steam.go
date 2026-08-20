@@ -12,7 +12,7 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-// GameAppID is the Steam app id for "我滴妈".
+// GameAppID is the Steam app id for "我在地府打麻将".
 const GameAppID = "3444020"
 
 // SteamUser represents one Steam user account that has save data for the game.
