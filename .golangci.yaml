@@ -195,7 +195,6 @@ formatters:
   enable:
     - gci
     - gofmt
-    - goimports
   settings:
     gci:
       # Section configuration to compare against.
@@ -206,10 +205,7 @@ formatters:
       sections:
         - standard                       # Standard section: captures all standard packages.
         - default                        # Default section: contains all imports that could not be matched to another section type.
-        - prefix(github.com/org/project) # Custom section: groups all imports with the specified Prefix.
-        - blank                          # Blank section: contains all blank imports. This section is not present unless explicitly enabled.
-        - dot                            # Dot section: contains all dot imports. This section is not present unless explicitly enabled.
-        - alias                          # Alias section: contains all alias imports. This section is not present unless explicitly enabled.
+        - localmodule                    # Local module section: contains all imports from the local module.
     gofmt:
       # Simplify code: gofmt with `-s` option.
       # Default: true
@@ -244,13 +240,6 @@ formatters:
       # Choose whether to use the extra rules.
       # Default: false
       extra-rules: true
-
-    goimports:
-      # A list of prefixes, which, if set, checks import paths
-      # with the given prefixes are grouped after 3rd-party packages.
-      # Default: []
-      local-prefixes:
-        - github.com/org/project
 
   exclusions:
     generated: lax
