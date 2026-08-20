@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -25,8 +26,8 @@ type WifiServer struct {
 // StartWifiServer starts an HTTP server on the local network and returns
 // the URL and token for the client to upload game.db from their phone.
 func StartWifiServer(dstPath string) (*WifiResult, error) {
-	// Get local IP for display
-	ip := localIP()
+	// Get all candidate IPs
+	primaryIP, allIPs := getAllIPs()
 
 	// Bind to all interfaces for reliability
 	listener, err := net.Listen("tcp", "0.0.0.0:0")
@@ -60,11 +61,20 @@ func StartWifiServer(dstPath string) (*WifiResult, error) {
 		}
 	}()
 
-	url := fmt.Sprintf("http://%s:%d/", ip, port)
+	// Build URLs
+	url := fmt.Sprintf("http://%s:%d/", primaryIP, port)
 	localURL := fmt.Sprintf("http://localhost:%d/", port)
 
+	// Build all access URLs
+	var allURLs []string
+	for _, ip := range allIPs {
+		allURLs = append(allURLs, fmt.Sprintf("http://%s:%d/", ip, port))
+	}
+	allURLs = append(allURLs, localURL)
+
 	// Get debug info
-	debugInfo := fmt.Sprintf("Selected IP: %s\nNetwork interfaces:\n%s", ip, listNetworkInterfaces())
+	debugInfo := fmt.Sprintf("Auto-detected primary IP: %s\nAll candidate IPs: %v\nNetwork interfaces:\n%s",
+		primaryIP, allIPs, listNetworkInterfaces())
 
 	// Store server reference
 	mu.Lock()
@@ -74,6 +84,7 @@ func StartWifiServer(dstPath string) (*WifiResult, error) {
 	return &WifiResult{
 		URL:       url,
 		LocalURL:  localURL,
+		AllURLs:   allURLs,
 		Token:     token,
 		DebugInfo: debugInfo,
 	}, nil
@@ -116,10 +127,11 @@ var (
 
 // WifiResult holds the connection info for the client.
 type WifiResult struct {
-	URL       string `json:"url"`      // LAN IP URL for phone access
-	LocalURL  string `json:"localUrl"` // localhost URL for local testing
-	Token     string `json:"token"`
-	DebugInfo string `json:"debugInfo"` // Debug info for troubleshooting
+	URL       string   `json:"url"`      // Best guess URL for phone access
+	LocalURL  string   `json:"localUrl"` // localhost URL for local testing
+	AllURLs   []string `json:"allUrls"`  // All available IP-based URLs
+	Token     string   `json:"token"`
+	DebugInfo string   `json:"debugInfo"` // Debug info for troubleshooting
 }
 
 func (s *WifiServer) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -296,14 +308,74 @@ func (s *WifiServer) handleStatus(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"path": result})
 }
 
-// localIP returns the best non-loopback IPv4 address of the host.
-// It prefers active, non-point-to-point interfaces (excluding VPNs).
-// It also excludes CGNAT (100.64.0.0/10) and other non-routable addresses.
-// Falls back to 127.0.0.1 if no suitable address is found.
-func localIP() string {
+// getAllIPs returns the best guess primary IP and all candidate IPs.
+// It first tries to determine the primary IP by dialing a known address,
+// then falls back to listing all active non-loopback IPv4 addresses.
+func getAllIPs() (primaryIP string, allIPs []string) {
+	// First, try to determine the primary IP by connecting to a known address
+	primaryIP = primaryOutboundIP()
+
+	// Collect all candidate IPs (excluding loopback, link-local, CGNAT)
+	allIPs = collectCandidateIPs()
+
+	// If primary IP is not in candidates, add it
+	found := false
+	for _, ip := range allIPs {
+		if ip == primaryIP {
+			found = true
+			break
+		}
+	}
+	if !found && primaryIP != "" && primaryIP != "127.0.0.1" {
+		allIPs = append([]string{primaryIP}, allIPs...)
+	}
+
+	// If no IPs found at all, use localhost
+	if len(allIPs) == 0 {
+		primaryIP = "127.0.0.1"
+		allIPs = []string{"127.0.0.1"}
+	}
+
+	// If primary IP is empty, use first candidate
+	if primaryIP == "" {
+		primaryIP = allIPs[0]
+	}
+
+	return primaryIP, allIPs
+}
+
+// primaryOutboundIP determines the primary outbound IP by dialing a known address.
+// Returns empty string if it cannot be determined (e.g., no internet access).
+func primaryOutboundIP() string {
+	// Try multiple well-known addresses for reliability
+	candidates := []string{
+		"8.8.8.8:80",         // Google DNS
+		"1.1.1.1:80",         // Cloudflare DNS
+		"114.114.114.114:80", // 114 DNS (China)
+		"223.5.5.5:80",       // Ali DNS (China)
+	}
+
+	for _, addr := range candidates {
+		conn, err := net.DialTimeout("tcp", addr, 2*time.Second)
+		if err != nil {
+			continue
+		}
+		defer conn.Close()
+
+		localAddr := conn.LocalAddr().(*net.TCPAddr)
+		if ip4 := localAddr.IP.To4(); ip4 != nil {
+			return ip4.String()
+		}
+	}
+
+	return ""
+}
+
+// collectCandidateIPs returns all non-loopback, non-link-local, non-CGNAT IPv4 addresses.
+func collectCandidateIPs() []string {
 	ifaces, err := net.Interfaces()
 	if err != nil {
-		return "127.0.0.1"
+		return nil
 	}
 
 	var candidates []string
@@ -335,10 +407,19 @@ func localIP() string {
 		}
 	}
 
-	if len(candidates) > 0 {
-		return candidates[0]
+	// Prioritize 192.168.x.x IPs (most common for home/office LANs)
+	var primary []string
+	var secondary []string
+	for _, ip := range candidates {
+		if strings.HasPrefix(ip, "192.168.") {
+			primary = append(primary, ip)
+		} else {
+			secondary = append(secondary, ip)
+		}
 	}
-	return "127.0.0.1"
+
+	result := append(primary, secondary...)
+	return result
 }
 
 // isCGNAT checks if an IP is in the Carrier-Grade NAT range (100.64.0.0/10)

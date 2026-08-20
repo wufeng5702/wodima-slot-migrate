@@ -9,6 +9,7 @@ const props = defineProps<{
   error: string
   wifiUrl: string
   wifiLocalUrl: string
+  wifiAllUrls: string[]
   wifiActive: boolean
   wifiWaiting: boolean
   wifiError: string
@@ -19,7 +20,7 @@ const props = defineProps<{
 const showDebugInfo = ref(false)
 
 // Wi-Fi feature flag - disabled until fully implemented
-const WIFI_ENABLED = false
+const WIFI_ENABLED = true
 
 const emit = defineEmits<{
   (e: 'auto'): void
@@ -87,6 +88,19 @@ watch(() => props.wifiUrl, async (url: string) => {
           <code class="url">{{ props.wifiUrl }}</code>
           <p class="hint">请先将手机连入同一 Wi-Fi，在手机文件管理器中把 game.db 复制到「Download」文件夹，然后在打开的网页上选择文件并上传。</p>
         </div>
+
+        <!-- All available URLs for troubleshooting -->
+        <div class="all-urls" v-if="props.wifiAllUrls.length > 1">
+          <p class="section-title">🔗 所有可用地址（逐个尝试）：</p>
+          <ul class="url-list">
+            <li v-for="(url, idx) in props.wifiAllUrls" :key="idx" :class="{ primary: url === props.wifiUrl }">
+              <code class="url">{{ url }}</code>
+              <span v-if="url === props.wifiUrl" class="badge">推荐</span>
+              <span v-else-if="url === props.wifiLocalUrl" class="badge local">本机</span>
+            </li>
+          </ul>
+        </div>
+
         <div class="local-test" v-if="props.wifiLocalUrl">
           <p>💻 本机测试地址：</p>
           <code class="url">{{ props.wifiLocalUrl }}</code>
@@ -94,7 +108,7 @@ watch(() => props.wifiUrl, async (url: string) => {
         </div>
         <div class="qr-container" v-if="qrSvg" v-html="qrSvg"></div>
         <div class="firewall-hint">
-          <p class="hint">⚠️ <strong>提示：</strong>如果手机无法打开网页，请检查 Windows 防火墙是否允许此端口的入站连接。</p>
+          <p class="hint">⚠️ <strong>提示：</strong>如果手机无法打开网页，请尝试上方所有可用地址。</p>
         </div>
         <div v-if="props.wifiDebugInfo" class="debug-section">
           <button class="btn-debug" @click="showDebugInfo = !showDebugInfo">
@@ -193,5 +207,57 @@ watch(() => props.wifiUrl, async (url: string) => {
   white-space: pre-wrap;
   max-width: 500px;
   overflow-x: auto;
+}
+.all-urls {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+.all-urls .section-title {
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--color-text);
+  font-size: 13px;
+}
+.url-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.url-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  background: var(--color-bg);
+  border: 1px solid transparent;
+}
+.url-list li.primary {
+  border-color: var(--color-primary);
+  background: rgba(102, 126, 234, 0.1);
+}
+.url-list li:last-child {
+  margin-bottom: 0;
+}
+.url-list .url {
+  flex: 1;
+  font-size: 12px;
+  word-break: break-all;
+  color: var(--color-text);
+}
+.url-list .badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--color-primary);
+  color: white;
+  white-space: nowrap;
+}
+.url-list .badge.local {
+  background: var(--color-text-muted);
 }
 </style>

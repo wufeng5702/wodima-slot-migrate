@@ -21,14 +21,30 @@ func TestStartWifiServer(t *testing.T) {
 	if result.Token == "" {
 		t.Fatal("Expected non-empty token")
 	}
+	if len(result.AllURLs) == 0 {
+		t.Fatal("Expected non-empty AllURLs")
+	}
 	
 	t.Logf("Server URL (LAN): %s", result.URL)
 	t.Logf("Server LocalURL: %s", result.LocalURL)
 	t.Logf("Server Token: %s", result.Token)
+	t.Logf("All URLs: %v", result.AllURLs)
 	
 	// Verify LocalURL contains localhost
 	if len(result.LocalURL) < 11 || result.LocalURL[:10] != "http://loc" {
 		t.Fatalf("Expected LocalURL to start with http://localhost, got: %s", result.LocalURL)
+	}
+	
+	// Verify AllURLs contains LocalURL
+	foundLocal := false
+	for _, url := range result.AllURLs {
+		if url == result.LocalURL {
+			foundLocal = true
+			break
+		}
+	}
+	if !foundLocal {
+		t.Fatal("Expected AllURLs to contain LocalURL")
 	}
 	
 	// Test CheckWifiUpload before upload

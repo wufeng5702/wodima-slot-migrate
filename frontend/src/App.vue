@@ -22,6 +22,7 @@ const androidStatus = ref('')
 // Wi-Fi transfer state
 const wifiUrl = ref('')
 const wifiLocalUrl = ref('')
+const wifiAllUrls = ref<string[]>([])
 const wifiActive = ref(false)
 const wifiWaiting = ref(false)
 const wifiError = ref('')
@@ -162,6 +163,7 @@ async function clearWifiState() {
   wifiActive.value = false
   wifiUrl.value = ''
   wifiLocalUrl.value = ''
+  wifiAllUrls.value = []
   wifiWaiting.value = false
   wifiError.value = ''
   wifiStatus.value = ''
@@ -181,6 +183,7 @@ async function toggleWifi() {
     wifiActive.value = false
     wifiUrl.value = ''
     wifiLocalUrl.value = ''
+    wifiAllUrls.value = []
     wifiWaiting.value = false
     wifiError.value = ''
     wifiDebugInfo.value = ''
@@ -195,6 +198,7 @@ async function toggleWifi() {
       console.log('StartWifiServer result:', result)
       wifiUrl.value = result.url
       wifiLocalUrl.value = result.localUrl
+      wifiAllUrls.value = result.allUrls || []
       wifiDebugInfo.value = result.debugInfo
       wifiActive.value = true
       wifiWaiting.value = true
@@ -271,6 +275,7 @@ function pollWifiUpload(token: string) {
         :error="androidError"
         :wifi-url="wifiUrl"
         :wifi-local-url="wifiLocalUrl"
+        :wifi-all-urls="wifiAllUrls"
         :wifi-active="wifiActive"
         :wifi-waiting="wifiWaiting"
         :wifi-error="wifiError"

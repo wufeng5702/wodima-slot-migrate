@@ -25,6 +25,7 @@ export namespace android {
 	export class WifiResult {
 	    url: string;
 	    localUrl: string;
+	    allUrls: string[];
 	    token: string;
 	    debugInfo: string;
 	
@@ -36,6 +37,7 @@ export namespace android {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.url = source["url"];
 	        this.localUrl = source["localUrl"];
+	        this.allUrls = source["allUrls"];
 	        this.token = source["token"];
 	        this.debugInfo = source["debugInfo"];
 	    }
