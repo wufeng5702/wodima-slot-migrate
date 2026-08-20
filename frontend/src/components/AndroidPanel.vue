@@ -127,19 +127,26 @@ async function copyCmd(cmd?: string) {
           <p class="section-title">🛡️ 防火墙配置（如手机无法访问）：</p>
           <p class="hint">以<strong>管理员身份</strong>打开 PowerShell，依次尝试以下方法：</p>
           
-          <p class="sub-title">方法 1：添加端口规则</p>
+          <p class="sub-title">方法 1：将网络配置文件改为「专用」（推荐）</p>
+          <p class="hint">如果你的 Wi-Fi 是「公用」网络，Windows 会阻止所有入站连接。将网络改为「专用」即可：</p>
+          <div class="cmd-container">
+            <code class="cmd">Set-NetConnectionProfile -NetworkCategory Private</code>
+            <button class="btn-copy" @click="copyCmd('Set-NetConnectionProfile -NetworkCategory Private')">复制</button>
+          </div>
+          
+          <p class="sub-title">方法 2：添加端口规则</p>
           <div class="cmd-container">
             <code class="cmd">{{ props.wifiFirewallCmd }}</code>
             <button class="btn-copy" @click="copyCmd(props.wifiFirewallCmd)">复制</button>
           </div>
           
-          <p class="sub-title">方法 2：使用 PowerShell 命令</p>
+          <p class="sub-title">方法 3：使用 PowerShell 命令</p>
           <div class="cmd-container">
             <code class="cmd">{{ props.wifiFirewallCmdPs }}</code>
             <button class="btn-copy" @click="copyCmd(props.wifiFirewallCmdPs)">复制</button>
           </div>
           
-          <p class="sub-title">方法 3：临时关闭防火墙测试</p>
+          <p class="sub-title">方法 4：临时关闭防火墙测试</p>
           <div class="cmd-container">
             <code class="cmd">Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False</code>
             <button class="btn-copy" @click="copyCmd('Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False')">复制</button>
@@ -152,7 +159,7 @@ async function copyCmd(cmd?: string) {
         </div>
 
         <div class="firewall-hint">
-          <p class="hint">💡 <strong>提示：</strong>如果方法 1 和 2 都无效，请使用方法 3 临时关闭防火墙测试。如果关闭后手机可以访问，说明问题出在防火墙配置上。</p>
+          <p class="hint">💡 <strong>提示：</strong>如果方法 1 无效，请尝试方法 2-3。如果关闭防火墙后手机可以访问，说明问题出在防火墙配置上。</p>
         </div>
         <div v-if="props.wifiDebugInfo" class="debug-section">
           <button class="btn-debug" @click="showDebugInfo = !showDebugInfo">
