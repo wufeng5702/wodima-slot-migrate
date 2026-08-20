@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-
 	"wodima-slot-migrate/internal/android"
 	"wodima-slot-migrate/internal/migrate"
 	"wodima-slot-migrate/internal/steam"
@@ -47,7 +46,7 @@ func (a *App) PickRemoteManually() (string, error) {
 // file previously copied to the PC.
 func (a *App) PickAndroidDBManually() (string, error) {
 	return runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title:  "Select Android game.db",
+		Title: "Select Android game.db",
 		Filters: []runtime.FileFilter{
 			{DisplayName: "game.db (*.db, *.sqlite)", Pattern: "*.db;*.sqlite;game.db"},
 			{DisplayName: "All files", Pattern: "*.*"},

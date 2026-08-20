@@ -23,7 +23,7 @@ type SteamUser struct {
 
 // Info bundles the Steam install path and the discovered user accounts.
 type Info struct {
-	SteamPath string       `json:"steamPath"`
+	SteamPath string      `json:"steamPath"`
 	Users     []SteamUser `json:"users"`
 }
 

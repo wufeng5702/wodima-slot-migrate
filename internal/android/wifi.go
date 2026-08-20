@@ -369,7 +369,7 @@ func (s *WifiServer) handleUpload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Connection", "close")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{"status": "ok", "size": n})
+	json.NewEncoder(w).Encode(map[string]any{"status": "ok", "size": n}) //nolint
 }
 
 func (s *WifiServer) handleStatus(w http.ResponseWriter, r *http.Request) {
@@ -380,7 +380,7 @@ func (s *WifiServer) handleStatus(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"path": result})
+	json.NewEncoder(w).Encode(map[string]any{"path": result}) //nolint
 }
 
 func (s *WifiServer) handlePing(w http.ResponseWriter, r *http.Request) {
