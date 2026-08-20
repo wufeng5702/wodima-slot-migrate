@@ -65,6 +65,7 @@ async function pickRemote() {
 }
 
 async function autoFetch() {
+  await clearWifiState()
   busy.value = true
   androidError.value = ''
   androidStatus.value = '正在连接设备并拉取 game.db…'
@@ -82,6 +83,7 @@ async function autoFetch() {
 }
 
 async function pickAndroidDB() {
+  await clearWifiState()
   busy.value = true
   androidError.value = ''
   androidStatus.value = ''
@@ -144,6 +146,24 @@ function stopWifiPolling() {
     clearTimeout(wifiPollTimeout)
     wifiPollTimeout = null
   }
+}
+
+// Clear all Wi-Fi state and stop server if running
+async function clearWifiState() {
+  if (wifiActive.value) {
+    stopWifiPolling()
+    try {
+      await StopWifiServer()
+    } catch {
+      // Ignore errors when stopping
+    }
+  }
+  wifiActive.value = false
+  wifiUrl.value = ''
+  wifiLocalUrl.value = ''
+  wifiWaiting.value = false
+  wifiError.value = ''
+  wifiStatus.value = ''
 }
 
 async function toggleWifi() {
