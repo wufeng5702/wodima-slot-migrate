@@ -302,21 +302,25 @@ async function copyCmd(cmd?: string) {
 .cmd-container {
   display: flex;
   gap: 8px;
-  align-items: center;
+  align-items: stretch;
   margin-top: 8px;
-  padding: 8px 10px;
+  padding: 6px 6px 6px 10px;
   background: #1e1e1e;
   border-radius: 6px;
-  overflow-x: auto;
 }
 .cmd-container .cmd {
   flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 2px 0;
   color: #d4d4d4;
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: 12px;
   white-space: nowrap;
+  line-height: 24px;
 }
 .btn-copy {
+  flex-shrink: 0;
   padding: 4px 12px;
   font-size: 12px;
   background: #0078d4;
