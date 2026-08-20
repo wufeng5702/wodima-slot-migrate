@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
-import { AutoFetchAndroidDB, DetectSteam, Migrate, PickAndroidDBManually, PickRemoteManually, ReadAndroidSlots } from '../wailsjs/go/main/App'
+import { AutoFetchAndroidDB, CheckWifiUpload, DetectSteam, Migrate, PickAndroidDBManually, PickRemoteManually, ReadAndroidSlots, StartWifiServer, StopWifiServer } from '../wailsjs/go/main/App'
 import type { android, migrate, steam } from '../wailsjs/go/models'
 import AndroidPanel from './components/AndroidPanel.vue'
 import MigratePanel from './components/MigratePanel.vue'
@@ -18,6 +18,12 @@ const busy = ref(false)
 const steamError = ref('')
 const androidError = ref('')
 const androidStatus = ref('')
+
+// Wi-Fi transfer state
+const wifiUrl = ref('')
+const wifiActive = ref(false)
+const wifiWaiting = ref(false)
+const wifiError = ref('')
 
 const canMigrate = computed(
   () => selectedRemote.value !== '' && dbPath.value !== '' && selectedIds.value.length > 0
@@ -122,6 +128,58 @@ async function doMigrate() {
     busy.value = false
   }
 }
+
+async function toggleWifi() {
+  if (wifiActive.value) {
+    // Stop Wi-Fi server
+    try {
+      await StopWifiServer()
+    } catch (e: any) {
+      wifiError.value = String(e?.message ?? e)
+    }
+    wifiActive.value = false
+    wifiUrl.value = ''
+    wifiWaiting.value = false
+    wifiError.value = ''
+  } else {
+    // Start Wi-Fi server
+    busy.value = true
+    wifiError.value = ''
+    try {
+      const result = await StartWifiServer()
+      wifiUrl.value = result.url
+      wifiActive.value = true
+      wifiWaiting.value = true
+      // Poll for upload completion
+      pollWifiUpload(result.token)
+    } catch (e: any) {
+      wifiError.value = String(e?.message ?? e)
+    } finally {
+      busy.value = false
+    }
+  }
+}
+
+async function pollWifiUpload(token: string) {
+  // Poll every 2 seconds for file upload completion
+  const interval = setInterval(async () => {
+    try {
+      const path = await CheckWifiUpload(token)
+      if (path) {
+        // File uploaded successfully
+        clearInterval(interval)
+        wifiWaiting.value = false
+        wifiActive.value = false
+        wifiUrl.value = ''
+        dbPath.value = path
+        androidStatus.value = 'Wi-Fi 上传成功，已加载存档文件。'
+        await readSlots(path)
+      }
+    } catch {
+      // Still waiting, ignore errors
+    }
+  }, 2000)
+}
 </script>
 
 <template>
@@ -145,8 +203,13 @@ async function doMigrate() {
         :busy="busy"
         :status="androidStatus"
         :error="androidError"
+        :wifi-url="wifiUrl"
+        :wifi-active="wifiActive"
+        :wifi-waiting="wifiWaiting"
+        :wifi-error="wifiError"
         @auto="autoFetch"
         @pick="pickAndroidDB"
+        @wifi="toggleWifi"
       />
       <SlotTable
         :rows="slots"

@@ -6,6 +6,8 @@ import {android} from '../models';
 
 export function AutoFetchAndroidDB():Promise<string>;
 
+export function CheckWifiUpload(arg1:string):Promise<string>;
+
 export function DetectSteam():Promise<steam.Info>;
 
 export function Migrate(arg1:string,arg2:Array<migrate.SlotSelection>):Promise<Array<migrate.MigrateResult>>;
@@ -15,3 +17,7 @@ export function PickAndroidDBManually():Promise<string>;
 export function PickRemoteManually():Promise<string>;
 
 export function ReadAndroidSlots(arg1:string):Promise<Array<android.SlotRow>>;
+
+export function StartWifiServer():Promise<android.WifiResult>;
+
+export function StopWifiServer():Promise<void>;

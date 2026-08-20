@@ -6,6 +6,10 @@ export function AutoFetchAndroidDB() {
   return window['go']['main']['App']['AutoFetchAndroidDB']();
 }
 
+export function CheckWifiUpload(arg1) {
+  return window['go']['main']['App']['CheckWifiUpload'](arg1);
+}
+
 export function DetectSteam() {
   return window['go']['main']['App']['DetectSteam']();
 }
@@ -24,4 +28,12 @@ export function PickRemoteManually() {
 
 export function ReadAndroidSlots(arg1) {
   return window['go']['main']['App']['ReadAndroidSlots'](arg1);
+}
+
+export function StartWifiServer() {
+  return window['go']['main']['App']['StartWifiServer']();
+}
+
+export function StopWifiServer() {
+  return window['go']['main']['App']['StopWifiServer']();
 }

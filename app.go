@@ -105,6 +105,28 @@ func (a *App) Migrate(remotePath string, selections []migrate.SlotSelection) ([]
 	return migrate.Run(remotePath, selections), nil
 }
 
+// StartWifiServer starts an HTTP server on the local network for receiving
+// game.db via Wi-Fi upload from the user's phone.
+func (a *App) StartWifiServer() (*android.WifiResult, error) {
+	dst, err := cachedGameDBPath()
+	if err != nil {
+		return nil, err
+	}
+	return android.StartWifiServer(dst)
+}
+
+// StopWifiServer stops the currently running Wi-Fi server.
+func (a *App) StopWifiServer() error {
+	android.StopWifiServer()
+	return nil
+}
+
+// CheckWifiUpload polls the Wi-Fi server for upload completion.
+// Returns the local file path when upload is done, empty string otherwise.
+func (a *App) CheckWifiUpload(token string) (string, error) {
+	return android.CheckWifiUpload(token)
+}
+
 // cachedGameDBPath returns the destination where pulled game.db will be stored.
 // It lives in the user cache dir so repeated migrations do not pollute the OS temp.
 func cachedGameDBPath() (string, error) {
