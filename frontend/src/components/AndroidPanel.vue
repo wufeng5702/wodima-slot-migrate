@@ -101,8 +101,11 @@ async function copyCmd(cmd?: string) {
         <div class="wifi-info" v-if="props.wifiUrl">
           <p>📱 在手机上扫描二维码，或在浏览器打开：</p>
           <code class="url">{{ props.wifiUrl }}</code>
-          <p class="hint">请先将手机连入同一 Wi-Fi，在手机文件管理器中把 game.db 复制到「Download」文件夹，然后在打开的网页上选择文件并上传。</p>
         </div>
+
+        <div class="qr-container" v-if="qrSvg" v-html="qrSvg"></div>
+
+        <p class="hint">请先将手机连入同一 Wi-Fi，在手机文件管理器中把 game.db 复制到「Download」文件夹，然后在打开的网页上选择文件并上传。</p>
 
         <!-- All available URLs for troubleshooting -->
         <div class="all-urls" v-if="props.wifiAllUrls.length > 1">
@@ -167,7 +170,6 @@ async function copyCmd(cmd?: string) {
           </div>
         </div>
 
-        <div class="qr-container" v-if="qrSvg" v-html="qrSvg"></div>
         <div class="firewall-hint">
           <p class="hint">💡 <strong>提示：</strong>如果方法 1 和 2 都无效，请使用方法 3 临时关闭防火墙测试。如果关闭后手机可以访问，说明问题出在防火墙配置上。</p>
         </div>
