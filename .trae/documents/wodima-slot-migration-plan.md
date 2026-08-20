@@ -2,7 +2,7 @@
 
 ## 一、Summary（摘要）
 
-构建一个 Windows 桌面应用，将游戏《我滴妈》的安卓端 SQLite 存档迁移到 Steam 版（appid `3444020`）的 `Slot[012].json` 存档目录。后端使用 **Wails v2 (Go)** + 前端 **Vue 3 + TypeScript + Vite**，最终产物为单个 `.exe`（含内嵌 ADB），体积预期 25-40MB，满足 ≤100MB 限制。
+构建一个 Windows 桌面应用，将游戏《我在地府打麻将》的安卓端 SQLite 存档迁移到 Steam 版（appid `3444020`）的 `Slot[012].json` 存档目录。后端使用 **Wails v2 (Go)** + 前端 **Vue 3 + TypeScript + Vite**，最终产物为单个 `.exe`（含内嵌 ADB），体积预期 25-40MB，满足 ≤100MB 限制。
 
 ### 已确认的关键决策
 | 决策项 | 选定方案 |
