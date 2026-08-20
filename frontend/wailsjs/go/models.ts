@@ -30,6 +30,7 @@ export namespace android {
 	    debugInfo: string;
 	    port: number;
 	    firewallCmd: string;
+	    firewallCmdPs: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new WifiResult(source);
@@ -44,6 +45,7 @@ export namespace android {
 	        this.debugInfo = source["debugInfo"];
 	        this.port = source["port"];
 	        this.firewallCmd = source["firewallCmd"];
+	        this.firewallCmdPs = source["firewallCmdPs"];
 	    }
 	}
 

@@ -16,6 +16,7 @@ const props = defineProps<{
   wifiStatus: string
   wifiDebugInfo: string
   wifiFirewallCmd: string
+  wifiFirewallCmdPs: string
 }>()
 
 const showDebugInfo = ref(false)
@@ -48,10 +49,11 @@ watch(() => props.wifiUrl, async (url: string) => {
   }
 }, { immediate: true })
 
-async function copyCmd() {
-  if (props.wifiFirewallCmd) {
+async function copyCmd(cmd?: string) {
+  const text = cmd || props.wifiFirewallCmd
+  if (text) {
     try {
-      await navigator.clipboard.writeText(props.wifiFirewallCmd)
+      await navigator.clipboard.writeText(text)
       alert('命令已复制到剪贴板！')
     } catch {
       alert('复制失败，请手动复制')
@@ -74,7 +76,7 @@ async function copyCmd() {
 
       <!-- Action buttons -->
       <div class="row">
-        <button class="btn" :disabled="props.busy" @click="emit('auto')">自动从手机获取</button>
+        <button class="btn" :disabled="props.busy" @click="emit('auto')" title="需要使用数据线连接手机，并在手机上开启 USB 调试模式">自动从手机获取</button>
         <button class="btn" :disabled="props.busy" @click="emit('pick')">手动选择 game.db</button>
         <button v-if="WIFI_ENABLED" class="btn" :disabled="props.busy || props.wifiActive" @click="emit('wifi')">
           {{ props.wifiActive ? '停止 Wi-Fi 传输' : (props.busy ? '启动中…' : '通过 Wi-Fi 获取') }}
@@ -131,16 +133,42 @@ async function copyCmd() {
 
         <div class="firewall-section" v-if="props.wifiFirewallCmd">
           <p class="section-title">🛡️ 防火墙配置（如手机无法访问）：</p>
-          <p class="hint">以<strong>管理员身份</strong>打开 PowerShell，复制并执行以下命令：</p>
+          <p class="hint">以<strong>管理员身份</strong>打开 PowerShell，依次尝试以下方法：</p>
+          
+          <p class="sub-title">方法 1：允许入站连接（关键步骤！）</p>
+          <p class="hint">Windows 防火墙默认阻止所有入站连接，需要先允许：</p>
+          <div class="cmd-container">
+            <code class="cmd">netsh advfirewall set allprofiles inbound allow</code>
+            <button class="btn-copy" @click="copyCmd('netsh advfirewall set allprofiles inbound allow')">复制</button>
+          </div>
+          
+          <p class="sub-title">方法 2：添加端口规则</p>
           <div class="cmd-container">
             <code class="cmd">{{ props.wifiFirewallCmd }}</code>
-            <button class="btn-copy" @click="copyCmd">复制</button>
+            <button class="btn-copy" @click="copyCmd(props.wifiFirewallCmd)">复制</button>
+          </div>
+          
+          <p class="sub-title">方法 3：使用 PowerShell 命令</p>
+          <div class="cmd-container">
+            <code class="cmd">{{ props.wifiFirewallCmdPs }}</code>
+            <button class="btn-copy" @click="copyCmd(props.wifiFirewallCmdPs)">复制</button>
+          </div>
+          
+          <p class="sub-title">方法 4：临时关闭防火墙测试</p>
+          <div class="cmd-container">
+            <code class="cmd">Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False</code>
+            <button class="btn-copy" @click="copyCmd('Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False')">复制</button>
+          </div>
+          <p class="hint warning">⚠️ 临时关闭防火墙会移除所有网络保护，请在测试完成后立即重新开启：</p>
+          <div class="cmd-container">
+            <code class="cmd">Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True</code>
+            <button class="btn-copy" @click="copyCmd('Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True')">复制</button>
           </div>
         </div>
 
         <div class="qr-container" v-if="qrSvg" v-html="qrSvg"></div>
         <div class="firewall-hint">
-          <p class="hint">💡 <strong>提示：</strong>如果手机浏览器显示「连接被中止」，多数情况下是 Windows 防火墙阻止了入站连接。添加上方防火墙规则后即可解决。</p>
+          <p class="hint">💡 <strong>提示：</strong>如果方法 1 和 2 都无效，请使用方法 3 临时关闭防火墙测试。如果关闭后手机可以访问，说明问题出在防火墙配置上。</p>
         </div>
         <div v-if="props.wifiDebugInfo" class="debug-section">
           <button class="btn-debug" @click="showDebugInfo = !showDebugInfo">
@@ -325,6 +353,19 @@ async function copyCmd() {
   background: rgba(220, 53, 69, 0.1);
   border-radius: 8px;
   border: 1px solid rgba(220, 53, 69, 0.3);
+}
+.firewall-section .sub-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 12px 0 4px;
+  color: var(--color-text);
+}
+.firewall-section .sub-title:first-of-type {
+  margin-top: 8px;
+}
+.firewall-section .hint.warning {
+  color: #dc3545;
+  margin: 8px 0 4px;
 }
 .firewall-section .section-title {
   font-weight: 600;
