@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
-import type { steam } from '../../wailsjs/go/models'
+import {computed} from 'vue'
+import type {Info} from "../../bindings/wodima-slot-migrate/internal/steam";
 
 const props = defineProps<{
-  info: steam.Info | null
+  info: Info | null
   selectedRemote: string
   busy: boolean
   error: string
@@ -36,10 +36,10 @@ function onPick() {
       <div class="row" v-if="users.length">
         <span class="label">检测到的用户存档：</span>
         <select
-          class="select"
-          :value="props.selectedRemote"
-          :disabled="props.busy"
-          @change="emit('select', ($event.target as HTMLSelectElement).value)"
+            class="select"
+            :value="props.selectedRemote"
+            :disabled="props.busy"
+            @change="emit('select', ($event.target as HTMLSelectElement).value)"
         >
           <option value="">— 请选择 —</option>
           <option v-for="u in users" :key="u.steamId" :value="u.remotePath">

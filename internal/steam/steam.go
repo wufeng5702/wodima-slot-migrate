@@ -9,30 +9,97 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"golang.org/x/sys/windows/registry"
 )
 
 // GameAppID is the Steam app id for "我在地府打麻将".
 const GameAppID = "3444020"
 
-// SteamUser represents one Steam user account that has save data for the game.
-type SteamUser struct {
+// User SteamUser represents one Steam user account that has save data for the game.
+type User struct {
 	SteamID    string `json:"steamId"`
 	RemotePath string `json:"remotePath"`
 }
 
 // Info bundles the Steam install path and the discovered user accounts.
 type Info struct {
-	SteamPath string      `json:"steamPath"`
-	Users     []SteamUser `json:"users"`
+	SteamPath string `json:"steamPath"`
+	Users     []User `json:"users"`
 }
 
 var steamIDRe = regexp.MustCompile(`^\d+$`)
 
-// DetectPath reads the Steam install directory from the registry.
+type Service struct {
+	app *application.App
+}
+
+func NewService(app *application.App) *Service {
+	return &Service{app: app}
+}
+
+// DetectRequest carries arguments for Detect.
+type DetectRequest struct{}
+
+// DetectResponse is the return envelope for Detect.
+type DetectResponse struct {
+	Info Info `json:"info"`
+}
+
+// Detect is a convenience wrapper returning the full Info.
+func (s *Service) Detect(req *DetectRequest) (*DetectResponse, error) {
+	sp, err := s.detectSteamPath()
+	if err != nil {
+		return &DetectResponse{Info: Info{}}, err
+	}
+
+	users, err := s.detectUsers(sp)
+	if err != nil {
+		return &DetectResponse{Info: Info{SteamPath: sp}}, err
+	}
+
+	return &DetectResponse{Info: Info{SteamPath: sp, Users: users}}, nil
+}
+
+// PickRemoteManuallyRequest carries arguments for PickRemoteManually.
+type PickRemoteManuallyRequest struct{}
+
+// PickRemoteManuallyResponse is the return envelope for PickRemoteManually.
+type PickRemoteManuallyResponse struct {
+	Path string `json:"path"`
+}
+
+// PickRemoteManually opens a directory picker so the user can choose a Steam
+// remote folder manually (e.g. when Steam is installed in a portable location).
+func (s *Service) PickRemoteManually(req *PickRemoteManuallyRequest) (*PickRemoteManuallyResponse, error) {
+	if s == nil {
+		return nil, errors.New("service is not initialized")
+	}
+
+	if s.app == nil {
+		return nil, errors.New("app is not initialized")
+	}
+
+	if s.app.Dialog == nil {
+		return nil, errors.New("dialog is not initialized")
+	}
+
+	path, err := s.app.Dialog.OpenFile().
+		SetTitle("Select Steam remote save directory").
+		CanChooseDirectories(true).
+		CanChooseFiles(false).
+		PromptForSingleSelection()
+	if err != nil {
+		return nil, err
+	}
+
+	return &PickRemoteManuallyResponse{Path: path}, nil
+}
+
+// detectSteamPath reads the Steam install directory from the registry.
 // It first checks HKCU (per-user install), then falls back to HKLM 32-bit view
 // (typical for the official Steam installer on 64-bit Windows).
-func DetectPath() (string, error) {
+func (s *Service) detectSteamPath() (string, error) {
 	if p, err := readString(registry.CURRENT_USER, `Software\Valve\Steam`, "SteamPath"); err == nil {
 		return normalize(p), nil
 	}
@@ -45,9 +112,9 @@ func DetectPath() (string, error) {
 	return "", errors.New("steam install path not found in registry")
 }
 
-// DetectUsers scans {steamPath}\userdata for numeric sub-directories that
+// detectUsers scans {steamPath}\userdata for numeric sub-directories that
 // contain {GameAppID}\remote. The returned users are sorted by steamID.
-func DetectUsers(steamPath string) ([]SteamUser, error) {
+func (s *Service) detectUsers(steamPath string) ([]User, error) {
 	userdata := filepath.Join(steamPath, "userdata")
 	entries, err := os.ReadDir(userdata)
 	if err != nil {
@@ -56,7 +123,7 @@ func DetectUsers(steamPath string) ([]SteamUser, error) {
 		}
 		return nil, err
 	}
-	var users []SteamUser
+	var users []User
 	for _, e := range entries {
 		if !e.IsDir() || !steamIDRe.MatchString(e.Name()) {
 			continue
@@ -65,25 +132,12 @@ func DetectUsers(steamPath string) ([]SteamUser, error) {
 		if fi, err := os.Stat(remote); err != nil || !fi.IsDir() {
 			continue
 		}
-		users = append(users, SteamUser{
+		users = append(users, User{
 			SteamID:    e.Name(),
 			RemotePath: remote,
 		})
 	}
 	return users, nil
-}
-
-// Detect is a convenience wrapper returning the full Info.
-func Detect() (Info, error) {
-	sp, err := DetectPath()
-	if err != nil {
-		return Info{}, err
-	}
-	users, err := DetectUsers(sp)
-	if err != nil {
-		return Info{SteamPath: sp}, err
-	}
-	return Info{SteamPath: sp, Users: users}, nil
 }
 
 func readString(k registry.Key, path, value string) (string, error) {

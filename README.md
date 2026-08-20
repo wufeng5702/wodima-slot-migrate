@@ -33,7 +33,7 @@
 ### 安装 Wails
 
 ```bash
-go install github.com/wailsapp/wails/v2/cmd/wails@latest
+go install github.com/wailsapp/wails/v3/cmd/wails@latest
 ```
 
 ### 开发模式

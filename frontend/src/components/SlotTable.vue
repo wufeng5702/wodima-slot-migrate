@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
-import type { android } from '../../wailsjs/go/models'
+import {computed} from 'vue'
+import type {SlotRow} from "../../bindings/wodima-slot-migrate/internal/android";
 
 const props = defineProps<{
-  rows: android.SlotRow[]
+  rows: SlotRow[]
   selectedIds: Set<number>
   busy: boolean
 }>()
@@ -14,7 +14,7 @@ const emit = defineEmits<{
 }>()
 
 const allSelected = computed(
-  () => props.rows.length > 0 && props.rows.every(r => props.selectedIds.has(r.id))
+    () => props.rows.length > 0 && props.rows.every(r => props.selectedIds.has(r.id))
 )
 
 function formatSize(n: number): string {
@@ -43,10 +43,10 @@ const slotCollision = computed(() => {
       <h2>3. 选择要迁移的存档</h2>
       <label class="check-all" v-if="props.rows.length">
         <input
-          type="checkbox"
-          :checked="allSelected"
-          :disabled="props.busy"
-          @change="emit('toggleAll', !allSelected)"
+            type="checkbox"
+            :checked="allSelected"
+            :disabled="props.busy"
+            @change="emit('toggleAll', !allSelected)"
         />
         全选
       </label>
@@ -58,29 +58,29 @@ const slotCollision = computed(() => {
       </p>
       <table class="slot-table" v-if="props.rows.length">
         <thead>
-          <tr>
-            <th class="col-check"></th>
-            <th class="col-slot">slotIndex</th>
-            <th class="col-account">userAccount</th>
-            <th class="col-size">JSON 大小</th>
-            <th class="col-preview">JSON 预览</th>
-          </tr>
+        <tr>
+          <th class="col-check"></th>
+          <th class="col-slot">slotIndex</th>
+          <th class="col-account">userAccount</th>
+          <th class="col-size">JSON 大小</th>
+          <th class="col-preview">JSON 预览</th>
+        </tr>
         </thead>
         <tbody>
-          <tr v-for="r in props.rows" :key="r.id">
-            <td class="col-check">
-              <input
+        <tr v-for="r in props.rows" :key="r.id">
+          <td class="col-check">
+            <input
                 type="checkbox"
                 :checked="props.selectedIds.has(r.id)"
                 :disabled="props.busy"
                 @change="emit('toggle', r.id)"
-              />
-            </td>
-            <td class="col-slot">{{ r.slotIndex }}</td>
-            <td class="col-account">{{ r.userAccount || '(空)' }}</td>
-            <td class="col-size">{{ formatSize(r.jsonSize) }}</td>
-            <td class="col-preview"><code>{{ r.jsonPreview }}</code></td>
-          </tr>
+            />
+          </td>
+          <td class="col-slot">{{ r.slotIndex }}</td>
+          <td class="col-account">{{ r.userAccount || '(空)' }}</td>
+          <td class="col-size">{{ formatSize(r.jsonSize) }}</td>
+          <td class="col-preview"><code>{{ r.jsonPreview }}</code></td>
+        </tr>
         </tbody>
       </table>
     </div>

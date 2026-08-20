@@ -2,10 +2,13 @@
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "wodima-slot-migrate",
   "outputfilename": "WodimaSlotMigrate",
-  "frontend:install": "pnpm install",
-  "frontend:build": "pnpm build",
-  "frontend:dev:watcher": "pnpm dev",
-  "frontend:dev:serverUrl": "auto",
+  "frontend": {
+    "dir": "./frontend",
+    "install": "pnpm install",
+    "build": "pnpm build",
+    "dev:watcher": "pnpm dev",
+    "dev:serverUrl": "http://localhost:5173"
+  },
   "author": {
     "name": "Zwei",
     "email": "zwei.elen@outlook.com"

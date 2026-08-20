@@ -1,18 +1,33 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue'
-import { AutoFetchAndroidDB, CheckWifiUpload, DetectSteam, Migrate, PickAndroidDBManually, PickRemoteManually, ReadAndroidSlots, StartWifiServer, StopWifiServer } from '../wailsjs/go/main/App'
-import type { android, migrate, steam } from '../wailsjs/go/models'
+import {computed, onMounted, ref} from 'vue'
+
 import AndroidPanel from './components/AndroidPanel.vue'
 import MigratePanel from './components/MigratePanel.vue'
 import SlotTable from './components/SlotTable.vue'
 import SteamPanel from './components/SteamPanel.vue'
 
-const steamInfo = ref<steam.Info | null>(null)
+import {
+  AutoFetchAndroidDB,
+  CheckWifiUpload,
+  PickAndroidDBManually,
+  ReadAndroidSlots,
+  StartWifiServer,
+  StopWifiServer
+} from '../bindings/wodima-slot-migrate/internal/android/service'
+import {Detect, PickRemoteManually} from '../bindings/wodima-slot-migrate/internal/steam/service'
+import {Migrate} from "../bindings/wodima-slot-migrate/internal/migrate/service";
+
+import type {Result, SlotSelection} from "../bindings/wodima-slot-migrate/internal/migrate";
+import type {Info} from "../bindings/wodima-slot-migrate/internal/steam";
+import type {SlotRow} from "../bindings/wodima-slot-migrate/internal/android";
+
+
+const steamInfo = ref<Info | null>(null)
 const selectedRemote = ref('')
 const dbPath = ref('')
-const slots = ref<android.SlotRow[]>([])
+const slots = ref<SlotRow[]>([])
 const selectedIds = ref<number[]>([])
-const results = ref<migrate.MigrateResult[]>([])
+const results = ref<Result[]>([])
 
 const busy = ref(false)
 const steamError = ref('')
@@ -31,7 +46,7 @@ const wifiDebugInfo = ref('')
 const wifiFirewallCmd = ref('')
 
 const canMigrate = computed(
-  () => selectedRemote.value !== '' && dbPath.value !== '' && selectedIds.value.length > 0
+    () => selectedRemote.value !== '' && dbPath.value !== '' && selectedIds.value.length > 0
 )
 
 onMounted(() => {
@@ -42,9 +57,10 @@ async function detectSteam() {
   busy.value = true
   steamError.value = ''
   try {
-    const info = await DetectSteam()
+    const resp = await Detect({})
+    const info = resp?.info ?? null
     steamInfo.value = info
-    if (info.users.length === 1) {
+    if (info?.users && info.users.length === 1) {
       selectedRemote.value = info.users[0].remotePath
     }
   } catch (e: any) {
@@ -58,7 +74,8 @@ async function pickRemote() {
   busy.value = true
   steamError.value = ''
   try {
-    const dir = await PickRemoteManually()
+    const resp = await PickRemoteManually({})
+    const dir = resp?.path ?? ''
     if (dir) selectedRemote.value = dir
   } catch (e: any) {
     steamError.value = String(e?.message ?? e)
@@ -73,7 +90,8 @@ async function autoFetch() {
   androidError.value = ''
   androidStatus.value = '正在连接设备并拉取 game.db…'
   try {
-    const path = await AutoFetchAndroidDB()
+    const resp = await AutoFetchAndroidDB({})
+    const path = resp?.path ?? ''
     dbPath.value = path
     androidStatus.value = '已获取存档文件。'
     await readSlots(path)
@@ -91,7 +109,8 @@ async function pickAndroidDB() {
   androidError.value = ''
   androidStatus.value = ''
   try {
-    const path = await PickAndroidDBManually()
+    const resp = await PickAndroidDBManually({})
+    const path = resp?.path ?? ''
     if (path) {
       dbPath.value = path
       await readSlots(path)
@@ -107,8 +126,8 @@ async function readSlots(path: string) {
   slots.value = []
   selectedIds.value = []
   results.value = []
-  const rows = await ReadAndroidSlots(path)
-  slots.value = rows
+  const resp = await ReadAndroidSlots({dbPath: path})
+  slots.value = resp?.rows ?? []
 }
 
 function toggleSlot(id: number) {
@@ -118,17 +137,23 @@ function toggleSlot(id: number) {
 }
 
 function toggleAll(on: boolean) {
-  selectedIds.value = on ? slots.value.map(r => r.id) : []
+  selectedIds.value = on ? slots.value.map((r: { id: any }) => r.id) : []
 }
 
 async function doMigrate() {
   busy.value = true
   results.value = []
   try {
-    const selections: migrate.SlotSelection[] = slots.value
-      .filter(r => selectedIds.value.includes(r.id))
-      .map(r => ({ id: r.id, slotIndex: r.slotIndex, jsonString: r.jsonString }))
-    results.value = await Migrate(selectedRemote.value, selections)
+    const selections: SlotSelection[] = slots.value
+        .filter((r: { id: number }) => selectedIds.value.includes(r.id))
+        .map((r: { id: any; slotIndex: any; jsonString: any }) => ({
+          id: r.id,
+          slotIndex: r.slotIndex,
+          jsonString: r.jsonString
+        }))
+
+    const resp = await Migrate({remotePath: selectedRemote.value, selections})
+    results.value = resp?.results ?? []
   } catch (e: any) {
     androidError.value = String(e?.message ?? e)
   } finally {
@@ -156,7 +181,7 @@ async function clearWifiState() {
   if (wifiActive.value) {
     stopWifiPolling()
     try {
-      await StopWifiServer()
+      await StopWifiServer({})
     } catch {
       // Ignore errors when stopping
     }
@@ -177,7 +202,7 @@ async function toggleWifi() {
     // Stop Wi-Fi server
     stopWifiPolling()
     try {
-      await StopWifiServer()
+      await StopWifiServer({})
     } catch (e: any) {
       wifiError.value = String(e?.message ?? e)
     }
@@ -196,7 +221,14 @@ async function toggleWifi() {
     wifiStatus.value = '正在启动 Wi-Fi 服务器…'
     try {
       console.log('Calling StartWifiServer...')
-      const result = await StartWifiServer()
+      const resp = await StartWifiServer({})
+      const result = resp?.result ?? null
+      if (!result) {
+        wifiError.value = '启动 Wi-Fi 服务器失败：返回结果为空'
+        wifiStatus.value = ''
+        return
+      }
+
       console.log('StartWifiServer result:', result)
       wifiUrl.value = result.url
       wifiLocalUrl.value = result.localUrl
@@ -225,7 +257,8 @@ function pollWifiUpload(token: string) {
   // Poll every 2 seconds for file upload completion
   wifiPollTimer = setInterval(async () => {
     try {
-      const path = await CheckWifiUpload(token)
+      const resp = await CheckWifiUpload({token})
+      const path = resp?.path ?? ''
       if (path) {
         // File uploaded successfully
         stopWifiPolling()
@@ -263,44 +296,44 @@ function pollWifiUpload(token: string) {
     </header>
     <main class="app-main">
       <SteamPanel
-        :info="steamInfo"
-        :selected-remote="selectedRemote"
-        :busy="busy"
-        :error="steamError"
-        @detect="detectSteam"
-        @pick="pickRemote"
-        @select="(r: string) => (selectedRemote = r)"
+          :info="steamInfo"
+          :selected-remote="selectedRemote"
+          :busy="busy"
+          :error="steamError"
+          @detect="detectSteam"
+          @pick="pickRemote"
+          @select="(r: string) => (selectedRemote = r)"
       />
       <AndroidPanel
-        :db-path="dbPath"
-        :busy="busy"
-        :status="androidStatus"
-        :error="androidError"
-        :wifi-url="wifiUrl"
-        :wifi-local-url="wifiLocalUrl"
-        :wifi-all-urls="wifiAllUrls"
-        :wifi-active="wifiActive"
-        :wifi-waiting="wifiWaiting"
-        :wifi-error="wifiError"
-        :wifi-status="wifiStatus"
-        :wifi-debug-info="wifiDebugInfo"
-        :wifi-firewall-cmd="wifiFirewallCmd"
-        @auto="autoFetch"
-        @pick="pickAndroidDB"
-        @wifi="toggleWifi"
+          :db-path="dbPath"
+          :busy="busy"
+          :status="androidStatus"
+          :error="androidError"
+          :wifi-url="wifiUrl"
+          :wifi-local-url="wifiLocalUrl"
+          :wifi-all-urls="wifiAllUrls"
+          :wifi-active="wifiActive"
+          :wifi-waiting="wifiWaiting"
+          :wifi-error="wifiError"
+          :wifi-status="wifiStatus"
+          :wifi-debug-info="wifiDebugInfo"
+          :wifi-firewall-cmd="wifiFirewallCmd"
+          @auto="autoFetch"
+          @pick="pickAndroidDB"
+          @wifi="toggleWifi"
       />
       <SlotTable
-        :rows="slots"
-        :selected-ids="new Set(selectedIds)"
-        :busy="busy"
-        @toggle="toggleSlot"
-        @toggle-all="toggleAll"
+          :rows="slots"
+          :selected-ids="new Set(selectedIds)"
+          :busy="busy"
+          @toggle="toggleSlot"
+          @toggle-all="toggleAll"
       />
       <MigratePanel
-        :results="results"
-        :busy="busy"
-        :can-migrate="canMigrate"
-        @migrate="doMigrate"
+          :results="results"
+          :busy="busy"
+          :can-migrate="canMigrate"
+          @migrate="doMigrate"
       />
     </main>
   </div>

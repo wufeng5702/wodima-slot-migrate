@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
-import type { migrate } from '../../wailsjs/go/models'
+import type {Result} from "../../bindings/wodima-slot-migrate/internal/migrate";
 
 const props = defineProps<{
-  results: migrate.MigrateResult[]
+  results: Result[]
   busy: boolean
   canMigrate: boolean
 }>()

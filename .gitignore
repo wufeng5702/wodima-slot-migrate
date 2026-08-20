@@ -28,10 +28,13 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
 
 build/bin
 node_modules
 frontend/dist
 game.db
+
+# wails task
+.task/checksum

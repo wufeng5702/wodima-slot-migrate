@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@wailsio/runtime": "latest",
     "qrcode": "^1.5.4",
     "vue": "^3.2.37"
   },
@@ -16,9 +17,9 @@
     "@babel/types": "^7.18.10",
     "@types/node": "^18.19.130",
     "@types/qrcode": "^1.5.5",
-    "@vitejs/plugin-vue": "^3.0.3",
+    "@vitejs/plugin-vue": "^6.0.8",
     "typescript": "^5.9.3",
-    "vite": "^3.0.7",
+    "vite": "8.0.16",
     "vue-tsc": "^3.3.10"
   }
 }

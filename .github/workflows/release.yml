@@ -31,19 +31,19 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install Wails CLI
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        run: go install github.com/wailsapp/wails/v3/cmd/wails@latest
 
       - name: Install frontend deps
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: wails build -clean -nsis -webview2 embed
+        run: wails build
 
       - name: Upload artifacts
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
-            build/bin/*.exe
-            build/bin/*.zip
+            bin/*.exe
+            bin/*.zip

@@ -1,26 +1,33 @@
 {
   "compilerOptions": {
+    "allowJs": true,
+    "noEmit": true,
     "target": "ESNext",
     "useDefineForClassFields": true,
+    "skipLibCheck": true,
     "module": "ESNext",
-    "moduleResolution": "Node",
-    "strict": true,
-    "jsx": "preserve",
-    "sourceMap": true,
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "esModuleInterop": true,
+    "verbatimModuleSyntax": true,
     "lib": [
-      "ESNext",
-      "DOM"
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
     ],
-    "skipLibCheck": true
+    "types": [
+      "node"
+    ],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
+    "noImplicitAny": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue"
+    "src",
+    "bindings"
   ],
   "references": [
     {
