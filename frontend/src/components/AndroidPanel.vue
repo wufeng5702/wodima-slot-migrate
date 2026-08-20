@@ -58,6 +58,11 @@ watch(() => props.wifiUrl, async (url: string) => {
         <button class="btn" :disabled="props.busy || props.wifiActive" @click="emit('wifi')">通过 Wi-Fi 获取</button>
       </div>
 
+      <!-- Status/Error messages -->
+      <p v-if="props.status" class="hint">{{ props.status }}</p>
+      <p v-if="props.error" class="error">{{ props.error }}</p>
+      <p v-if="props.wifiError" class="error">Wi-Fi 错误：{{ props.wifiError }}</p>
+
       <!-- Selected local file path -->
       <div class="row" v-if="props.dbPath">
         <span class="label">已加载文件：</span>
@@ -74,11 +79,7 @@ watch(() => props.wifiUrl, async (url: string) => {
         <div class="qr-container" v-if="qrSvg" v-html="qrSvg"></div>
         <button class="btn btn-stop" :disabled="props.busy" @click="emit('wifi')">停止 Wi-Fi 传输</button>
         <p v-if="props.wifiWaiting" class="hint">等待手机上传文件中…</p>
-        <p v-if="props.wifiError" class="error">{{ props.wifiError }}</p>
       </div>
-
-      <p v-if="props.status" class="hint">{{ props.status }}</p>
-      <p v-if="props.error" class="error">{{ props.error }}</p>
     </div>
   </section>
 </template>

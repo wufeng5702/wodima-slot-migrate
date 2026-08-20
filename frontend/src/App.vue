@@ -130,6 +130,7 @@ async function doMigrate() {
 }
 
 async function toggleWifi() {
+  console.log('toggleWifi called, wifiActive:', wifiActive.value)
   if (wifiActive.value) {
     // Stop Wi-Fi server
     try {
@@ -146,13 +147,16 @@ async function toggleWifi() {
     busy.value = true
     wifiError.value = ''
     try {
+      console.log('Calling StartWifiServer...')
       const result = await StartWifiServer()
+      console.log('StartWifiServer result:', result)
       wifiUrl.value = result.url
       wifiActive.value = true
       wifiWaiting.value = true
       // Poll for upload completion
       pollWifiUpload(result.token)
     } catch (e: any) {
+      console.error('StartWifiServer failed:', e)
       wifiError.value = String(e?.message ?? e)
     } finally {
       busy.value = false
