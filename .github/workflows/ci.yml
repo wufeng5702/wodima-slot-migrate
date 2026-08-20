@@ -42,6 +42,7 @@ jobs:
         with:
           version: v2.13
           args: --timeout 10m
+          skip-cache: true
 
   frontend-build:
     name: Build Frontend
