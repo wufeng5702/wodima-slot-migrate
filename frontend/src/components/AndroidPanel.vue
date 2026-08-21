@@ -24,14 +24,12 @@ const showDebugInfo = ref(false)
 const WIFI_ENABLED = true
 
 // Filter out localhost from URL list for LAN-only display
-const lanUrls = computed(() =>
-  props.wifiAllUrls.filter(url => !url.includes('localhost'))
-)
+const lanUrls = computed(() => props.wifiAllUrls.filter((url) => !url.includes('localhost')))
 
 const emit = defineEmits<{
-  (e: 'auto'): void
-  (e: 'pick'): void
-  (e: 'wifi'): void
+  (_e: 'auto'): void
+  (_e: 'pick'): void
+  (_e: 'wifi'): void
 }>()
 
 // Android device path (constant, shown for reference)
@@ -41,17 +39,21 @@ const ANDROID_DB_PATH = '/sdcard/Android/data/com.itaotuo.wodima/files/game.db'
 const qrSvg = ref('')
 
 // Generate QR code when wifiUrl changes
-watch(() => props.wifiUrl, async (url: string) => {
-  if (url) {
-    try {
-      qrSvg.value = await QRCode.toString(url, { type: 'svg', width: 200 })
-    } catch {
+watch(
+  () => props.wifiUrl,
+  async (url: string) => {
+    if (url) {
+      try {
+        qrSvg.value = await QRCode.toString(url, { type: 'svg', width: 200 })
+      } catch {
+        qrSvg.value = ''
+      }
+    } else {
       qrSvg.value = ''
     }
-  } else {
-    qrSvg.value = ''
-  }
-}, { immediate: true })
+  },
+  { immediate: true },
+)
 
 async function copyCmd(cmd?: string) {
   const text = cmd || props.wifiFirewallCmd
@@ -82,57 +84,85 @@ async function copyCmd(cmd?: string) {
       <div class="row">
         <button class="btn" :disabled="props.busy" @click="emit('auto')">自动从手机获取</button>
         <button class="btn" :disabled="props.busy" @click="emit('pick')">手动选择 game.db</button>
-        <button v-if="WIFI_ENABLED" class="btn" :disabled="props.busy || props.wifiActive" @click="emit('wifi')">
-          {{ props.wifiActive ? '停止 Wi-Fi 传输' : (props.busy ? '启动中…' : '通过 Wi-Fi 获取') }}
+        <button
+          v-if="WIFI_ENABLED"
+          class="btn"
+          :disabled="props.busy || props.wifiActive"
+          @click="emit('wifi')"
+        >
+          {{ props.wifiActive ? '停止 Wi-Fi 传输' : props.busy ? '启动中…' : '通过 Wi-Fi 获取' }}
         </button>
       </div>
-      <p class="hint note">💡 「自动从手机获取」需要使用<strong>数据线</strong>连接手机，并在手机上开启 <strong>USB 调试模式</strong>。</p>
+      <p class="hint note">
+        💡 「自动从手机获取」需要使用<strong>数据线</strong>连接手机，并在手机上开启
+        <strong>USB 调试模式</strong>。
+      </p>
 
       <!-- Status/Error messages -->
-      <p v-if="props.status" class="hint">{{ props.status }}</p>
-      <p v-if="props.error" class="error">{{ props.error }}</p>
-      <p v-if="WIFI_ENABLED && props.wifiStatus" class="hint wifi-status">{{ props.wifiStatus }}</p>
+      <p v-if="props.status" class="hint">
+        {{ props.status }}
+      </p>
+      <p v-if="props.error" class="error">
+        {{ props.error }}
+      </p>
+      <p v-if="WIFI_ENABLED && props.wifiStatus" class="hint wifi-status">
+        {{ props.wifiStatus }}
+      </p>
       <p v-if="WIFI_ENABLED && props.wifiError" class="error">Wi-Fi 错误：{{ props.wifiError }}</p>
 
       <!-- Selected local file path -->
-      <div class="row" v-if="props.dbPath">
+      <div v-if="props.dbPath" class="row">
         <span class="label">已加载文件：</span>
         <code class="path">{{ props.dbPath }}</code>
       </div>
 
       <!-- Wi-Fi transfer panel -->
-      <div class="wifi-panel" v-if="WIFI_ENABLED && props.wifiActive">
-        <div class="wifi-info" v-if="props.wifiUrl">
+      <div v-if="WIFI_ENABLED && props.wifiActive" class="wifi-panel">
+        <div v-if="props.wifiUrl" class="wifi-info">
           <p>📱 在手机上扫描二维码，或在浏览器打开：</p>
           <code class="url">{{ props.wifiUrl }}</code>
         </div>
 
-        <div class="qr-container" v-if="qrSvg" v-html="qrSvg"></div>
+        <div v-if="qrSvg" class="qr-container" v-html="qrSvg" />
 
-        <p class="hint">请先将手机连入同一 Wi-Fi，在手机文件管理器中把 game.db 复制到「Download」文件夹，然后在打开的网页上选择文件并上传。</p>
+        <p class="hint">
+          请先将手机连入同一 Wi-Fi，在手机文件管理器中把 game.db
+          复制到「Download」文件夹，然后在打开的网页上选择文件并上传。
+        </p>
 
         <!-- All available URLs (excluding localhost) -->
-        <div class="all-urls" v-if="lanUrls.length > 1">
+        <div v-if="lanUrls.length > 1" class="all-urls">
           <p class="section-title">🔗 所有可用地址（逐个尝试）：</p>
           <ul class="url-list">
-            <li v-for="(url, idx) in lanUrls" :key="idx" :class="{ primary: url === props.wifiUrl }">
+            <li
+              v-for="(url, idx) in lanUrls"
+              :key="idx"
+              :class="{ primary: url === props.wifiUrl }"
+            >
               <code class="url">{{ url }}</code>
               <span v-if="url === props.wifiUrl" class="badge">推荐</span>
             </li>
           </ul>
         </div>
 
-        <div class="firewall-section" v-if="props.wifiFirewallCmd">
+        <div v-if="props.wifiFirewallCmd" class="firewall-section">
           <p class="section-title">🛡️ 防火墙配置（如手机无法访问）：</p>
           <p class="hint">以<strong>管理员身份</strong>打开 PowerShell，依次尝试以下方法：</p>
-          
+
           <p class="sub-title">方法 1：将网络配置文件改为「专用」（推荐）</p>
-          <p class="hint">如果你的 Wi-Fi 是「公用」网络，Windows 会阻止所有入站连接。将网络改为「专用」即可：</p>
+          <p class="hint">
+            如果你的 Wi-Fi 是「公用」网络，Windows 会阻止所有入站连接。将网络改为「专用」即可：
+          </p>
           <div class="cmd-container">
             <code class="cmd">Set-NetConnectionProfile -NetworkCategory Private</code>
-            <button class="btn-copy" @click="copyCmd('Set-NetConnectionProfile -NetworkCategory Private')">复制</button>
+            <button
+              class="btn-copy"
+              @click="copyCmd('Set-NetConnectionProfile -NetworkCategory Private')"
+            >
+              复制
+            </button>
           </div>
-          
+
           <p class="sub-title">方法 2：添加端口规则</p>
           <div class="cmd-container">
             <code class="cmd">{{ props.wifiFirewallCmd }}</code>
@@ -145,7 +175,9 @@ async function copyCmd(cmd?: string) {
           </button>
           <pre v-if="showDebugInfo" class="debug-info">{{ props.wifiDebugInfo }}</pre>
         </div>
-        <button class="btn btn-stop" :disabled="props.busy" @click="emit('wifi')">停止 Wi-Fi 传输</button>
+        <button class="btn btn-stop" :disabled="props.busy" @click="emit('wifi')">
+          停止 Wi-Fi 传输
+        </button>
         <p v-if="props.wifiWaiting" class="hint">等待手机上传文件中…</p>
       </div>
     </div>

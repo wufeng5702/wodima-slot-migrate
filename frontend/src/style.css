@@ -24,7 +24,7 @@ body {
   height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
   font-size: 14px;
 }
 
@@ -122,7 +122,7 @@ body {
 }
 
 .path {
-  font-family: "Cascadia Code", Consolas, monospace;
+  font-family: 'Cascadia Code', Consolas, monospace;
   font-size: 12px;
   background: var(--code-bg);
   padding: 2px 6px;
@@ -209,12 +209,21 @@ body {
   border-bottom: none;
 }
 
-.col-check { width: 36px; text-align: center; }
-.col-slot { width: 80px; }
-.col-account { width: 140px; }
-.col-size { width: 90px; }
+.col-check {
+  width: 36px;
+  text-align: center;
+}
+.col-slot {
+  width: 80px;
+}
+.col-account {
+  width: 140px;
+}
+.col-size {
+  width: 90px;
+}
 .col-preview code {
-  font-family: "Cascadia Code", Consolas, monospace;
+  font-family: 'Cascadia Code', Consolas, monospace;
   font-size: 11px;
   color: var(--text-muted);
   display: block;
@@ -249,8 +258,14 @@ body {
   font-size: 11px;
 }
 
-.result-log li.ok .badge { background: var(--ok); color: #fff; }
-.result-log li.fail .badge { background: var(--fail); color: #fff; }
+.result-log li.ok .badge {
+  background: var(--ok);
+  color: #fff;
+}
+.result-log li.fail .badge {
+  background: var(--fail);
+  color: #fff;
+}
 
 .result-log .backup {
   color: var(--warn);

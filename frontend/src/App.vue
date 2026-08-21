@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, onMounted, ref} from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 import AndroidPanel from './components/AndroidPanel.vue'
 import MigratePanel from './components/MigratePanel.vue'
@@ -12,15 +12,14 @@ import {
   PickAndroidDBManually,
   ReadAndroidSlots,
   StartWifiServer,
-  StopWifiServer
+  StopWifiServer,
 } from '../bindings/wodima-slot-migrate/internal/android/service'
-import {Detect, PickRemoteManually} from '../bindings/wodima-slot-migrate/internal/steam/service'
-import {Migrate} from "../bindings/wodima-slot-migrate/internal/migrate/service";
+import { Detect, PickRemoteManually } from '../bindings/wodima-slot-migrate/internal/steam/service'
+import { Migrate } from '../bindings/wodima-slot-migrate/internal/migrate/service'
 
-import type {Result, SlotSelection} from "../bindings/wodima-slot-migrate/internal/migrate";
-import type {Info} from "../bindings/wodima-slot-migrate/internal/steam";
-import type {SlotRow} from "../bindings/wodima-slot-migrate/internal/android";
-
+import type { Result, SlotSelection } from '../bindings/wodima-slot-migrate/internal/migrate'
+import type { Info } from '../bindings/wodima-slot-migrate/internal/steam'
+import type { SlotRow } from '../bindings/wodima-slot-migrate/internal/android'
 
 const steamInfo = ref<Info | null>(null)
 const selectedRemote = ref('')
@@ -46,7 +45,7 @@ const wifiDebugInfo = ref('')
 const wifiFirewallCmd = ref('')
 
 const canMigrate = computed(
-    () => selectedRemote.value !== '' && dbPath.value !== '' && selectedIds.value.length > 0
+  () => selectedRemote.value !== '' && dbPath.value !== '' && selectedIds.value.length > 0,
 )
 
 onMounted(() => {
@@ -126,13 +125,13 @@ async function readSlots(path: string) {
   slots.value = []
   selectedIds.value = []
   results.value = []
-  const resp = await ReadAndroidSlots({dbPath: path})
+  const resp = await ReadAndroidSlots({ dbPath: path })
   slots.value = resp?.rows ?? []
 }
 
 function toggleSlot(id: number) {
   const i = selectedIds.value.indexOf(id)
-  if (i >= 0) selectedIds.value = selectedIds.value.filter(x => x !== id)
+  if (i >= 0) selectedIds.value = selectedIds.value.filter((x) => x !== id)
   else selectedIds.value = [...selectedIds.value, id]
 }
 
@@ -145,14 +144,14 @@ async function doMigrate() {
   results.value = []
   try {
     const selections: SlotSelection[] = slots.value
-        .filter((r: { id: number }) => selectedIds.value.includes(r.id))
-        .map((r: { id: any; slotIndex: any; jsonString: any }) => ({
-          id: r.id,
-          slotIndex: r.slotIndex,
-          jsonString: r.jsonString
-        }))
+      .filter((r: { id: number }) => selectedIds.value.includes(r.id))
+      .map((r: { id: any; slotIndex: any; jsonString: any }) => ({
+        id: r.id,
+        slotIndex: r.slotIndex,
+        jsonString: r.jsonString,
+      }))
 
-    const resp = await Migrate({remotePath: selectedRemote.value, selections})
+    const resp = await Migrate({ remotePath: selectedRemote.value, selections })
     results.value = resp?.results ?? []
   } catch (e: any) {
     androidError.value = String(e?.message ?? e)
@@ -257,7 +256,7 @@ function pollWifiUpload(token: string) {
   // Poll every 2 seconds for file upload completion
   wifiPollTimer = setInterval(async () => {
     try {
-      const resp = await CheckWifiUpload({token})
+      const resp = await CheckWifiUpload({ token })
       const path = resp?.path ?? ''
       if (path) {
         // File uploaded successfully
@@ -277,14 +276,17 @@ function pollWifiUpload(token: string) {
   }, 2000)
 
   // Timeout after 10 minutes
-  wifiPollTimeout = setTimeout(() => {
-    stopWifiPolling()
-    if (wifiActive.value && wifiWaiting.value) {
-      wifiWaiting.value = false
-      wifiStatus.value = '等待超时，请重新启动 Wi-Fi 传输。'
-      wifiError.value = '上传超时（10 分钟）'
-    }
-  }, 10 * 60 * 1000)
+  wifiPollTimeout = setTimeout(
+    () => {
+      stopWifiPolling()
+      if (wifiActive.value && wifiWaiting.value) {
+        wifiWaiting.value = false
+        wifiStatus.value = '等待超时，请重新启动 Wi-Fi 传输。'
+        wifiError.value = '上传超时（10 分钟）'
+      }
+    },
+    10 * 60 * 1000,
+  )
 }
 </script>
 
@@ -296,44 +298,44 @@ function pollWifiUpload(token: string) {
     </header>
     <main class="app-main">
       <SteamPanel
-          :info="steamInfo"
-          :selected-remote="selectedRemote"
-          :busy="busy"
-          :error="steamError"
-          @detect="detectSteam"
-          @pick="pickRemote"
-          @select="(r: string) => (selectedRemote = r)"
+        :info="steamInfo"
+        :selected-remote="selectedRemote"
+        :busy="busy"
+        :error="steamError"
+        @detect="detectSteam"
+        @pick="pickRemote"
+        @select="(r: string) => (selectedRemote = r)"
       />
       <AndroidPanel
-          :db-path="dbPath"
-          :busy="busy"
-          :status="androidStatus"
-          :error="androidError"
-          :wifi-url="wifiUrl"
-          :wifi-local-url="wifiLocalUrl"
-          :wifi-all-urls="wifiAllUrls"
-          :wifi-active="wifiActive"
-          :wifi-waiting="wifiWaiting"
-          :wifi-error="wifiError"
-          :wifi-status="wifiStatus"
-          :wifi-debug-info="wifiDebugInfo"
-          :wifi-firewall-cmd="wifiFirewallCmd"
-          @auto="autoFetch"
-          @pick="pickAndroidDB"
-          @wifi="toggleWifi"
+        :db-path="dbPath"
+        :busy="busy"
+        :status="androidStatus"
+        :error="androidError"
+        :wifi-url="wifiUrl"
+        :wifi-local-url="wifiLocalUrl"
+        :wifi-all-urls="wifiAllUrls"
+        :wifi-active="wifiActive"
+        :wifi-waiting="wifiWaiting"
+        :wifi-error="wifiError"
+        :wifi-status="wifiStatus"
+        :wifi-debug-info="wifiDebugInfo"
+        :wifi-firewall-cmd="wifiFirewallCmd"
+        @auto="autoFetch"
+        @pick="pickAndroidDB"
+        @wifi="toggleWifi"
       />
       <SlotTable
-          :rows="slots"
-          :selected-ids="new Set(selectedIds)"
-          :busy="busy"
-          @toggle="toggleSlot"
-          @toggle-all="toggleAll"
+        :rows="slots"
+        :selected-ids="new Set(selectedIds)"
+        :busy="busy"
+        @toggle="toggleSlot"
+        @toggle-all="toggleAll"
       />
       <MigratePanel
-          :results="results"
-          :busy="busy"
-          :can-migrate="canMigrate"
-          @migrate="doMigrate"
+        :results="results"
+        :busy="busy"
+        :can-migrate="canMigrate"
+        @migrate="doMigrate"
       />
     </main>
   </div>

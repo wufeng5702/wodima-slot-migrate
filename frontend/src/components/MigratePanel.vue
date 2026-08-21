@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
-import type {Result} from "../../bindings/wodima-slot-migrate/internal/migrate";
+import type { Result } from '../../bindings/wodima-slot-migrate/internal/migrate'
 
 const props = defineProps<{
   results: Result[]
@@ -9,11 +9,11 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'migrate'): void
+  (_e: 'migrate'): void
 }>()
 
 const summary = computed(() => {
-  const ok = props.results.filter(r => r.success).length
+  const ok = props.results.filter((r) => r.success).length
   const fail = props.results.length - ok
   return { ok, fail, total: props.results.length }
 })
@@ -37,7 +37,7 @@ const summary = computed(() => {
           成功 {{ summary.ok }} / 失败 {{ summary.fail }} / 共 {{ summary.total }}
         </span>
       </div>
-      <ul class="result-log" v-if="props.results.length">
+      <ul v-if="props.results.length" class="result-log">
         <li v-for="r in props.results" :key="r.id" :class="r.success ? 'ok' : 'fail'">
           <span class="badge">{{ r.success ? 'OK' : 'FAIL' }}</span>
           Slot{{ r.slotIndex }} →
