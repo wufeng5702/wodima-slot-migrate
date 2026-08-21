@@ -12,7 +12,7 @@ jobs:
     name: Lint Go
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: pnpm/setup@v2
         working-directory: frontend
@@ -37,7 +37,7 @@ jobs:
     name: Lint PNPM
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: pnpm/setup@v2
         with:
