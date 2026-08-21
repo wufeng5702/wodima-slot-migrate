@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "dependencies/github-actions"
+    # reviewers, assignees, or ignored updates can be added here if desired
+    # Example to ignore a specific action:
+    # ignore:
+    #   - dependency-name: "actions/checkout"
+    #     update-types: ["version"]
