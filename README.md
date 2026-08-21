@@ -26,9 +26,9 @@
 ### 环境要求
 
 - [Go](https://go.dev/) 1.25+
-- [Node.js](https://nodejs.org/) 18+
+- [Node.js](https://nodejs.org/) 22+
 - [pnpm](https://pnpm.io/)
-- [Wails](https://wails.io/) v2
+- [Wails3](https://v3.wails.io/) v3
 
 ### 安装 Wails
 

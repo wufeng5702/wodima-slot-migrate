@@ -1,0 +1,52 @@
+name: LINT
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+
+jobs:
+  golangci-lint:
+    name: Lint Go
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/setup@v2
+        with:
+          version: 11
+          runtime: node@26
+
+      - name: Build frontend (required for go:embed)
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.13
+          args: --timeout 10m
+          skip-cache: true
+
+  pnpm-lint:
+    name: Lint PNPM
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/setup@v2
+        with:
+          version: 11
+          runtime: node@26
+
+      - name: Install Frontend Dependencies & Lint
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm lint

@@ -2,66 +2,38 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [ main, master ]
   pull_request:
-    branches: [main, master]
+    branches: [ main, master ]
 
 permissions:
   contents: read
 
 jobs:
-  golangci-lint:
-    name: Lint Go
+  build:
+    name: Build
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: pnpm/setup@v2
+        with:
+          version: 11
+          runtime: node@26
+
+      - name: Install Frontend Dependencies & Build
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - uses: actions/setup-go@v7
         with:
           go-version: '1.25'
           cache: true
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Build frontend (required for go:embed)
-        working-directory: frontend
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm build
-
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.13
-          args: --timeout 10m
-          skip-cache: true
-
-  frontend-build:
-    name: Build Frontend
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Install & Build
-        working-directory: frontend
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm build
+      - name: Build
+        run: wails3 build
